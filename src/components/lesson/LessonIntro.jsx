@@ -3,6 +3,7 @@ import { Icons } from "../Icons.jsx";
 import { sfxTap, sfxLessonStart, playLetterAudio } from "../../lib/audio.js";
 import { playGeneratedArabicAudio } from "../../lib/tts.js";
 import { getHarakah } from "../../data/harakat.js";
+import { PronunciationCard } from "../PronunciationGuide.jsx";
 
 export default function LessonIntro({ lesson, teachLetters, lessonCombos, isSound, isContrast, isHarakatIntro, isHarakatApplied, audioType, onBack, onStartQuiz }) {
   if (isHarakatIntro) {
@@ -41,8 +42,7 @@ export default function LessonIntro({ lesson, teachLetters, lessonCombos, isSoun
               <span style={{ fontFamily: "var(--font-arabic)", fontSize: 32, color: "var(--c-primary-dark)" }}>{"\u0628\u064E"}</span>
               <span style={{ fontSize: 14, fontWeight: 700, color: "var(--c-primary)" }}>{"\u201C"}ba{"\u201D"}</span>
             </div>
-            <button className="btn btn-ghost" onClick={() => { console.log("[AUDIO UI] 'Hear ba' button clicked"); playGeneratedArabicAudio("\u0628\u064E"); }} style={{ fontSize: 12, color: "var(--c-accent)", marginTop: 8, padding: "6px 14px" }}><Icons.Volume size={14} color="var(--c-accent)" /> Hear {"\u201C"}ba{"\u201D"}</button>
-            <button className="btn btn-ghost" onClick={() => { console.log("[AUDIO UI] TEST BUTTON clicked"); playGeneratedArabicAudio("\u0628\u064E"); }} style={{ fontSize: 11, color: "var(--c-danger)", marginTop: 4, padding: "4px 10px", border: "1px dashed var(--c-danger)" }}>Test Google Audio</button>
+            <button className="btn btn-ghost" onClick={() => playGeneratedArabicAudio("\u0628\u064E")} style={{ fontSize: 12, color: "var(--c-accent)", marginTop: 8, padding: "6px 14px" }}><Icons.Volume size={14} color="var(--c-accent)" /> Hear {"\u201C"}ba{"\u201D"}</button>
           </div>
           {lesson.familyRule && <p style={{ fontSize: 13, color: "var(--c-text-soft)", lineHeight: 1.5, maxWidth: 300, textAlign: "center", marginTop: 8 }}>{lesson.familyRule}</p>}
         </div>
@@ -68,7 +68,7 @@ export default function LessonIntro({ lesson, teachLetters, lessonCombos, isSoun
           </div>
           <div className="scale-in" style={{ display: "flex", gap: 14, justifyContent: "center", marginBottom: 16, flexWrap: "wrap" }}>
             {displayCombos.map(c => (
-              <div key={c.id} style={{ textAlign: "center", cursor: "pointer" }} onClick={() => { console.log("[AUDIO UI] combo card clicked, audioText:", c.audioText); playGeneratedArabicAudio(c.audioText); }}>
+              <div key={c.id} style={{ textAlign: "center", cursor: "pointer" }} onClick={() => playGeneratedArabicAudio(c.audioText)}>
                 <span style={{ fontFamily: "var(--font-arabic)", fontSize: 48, lineHeight: 1.6, color: "var(--c-primary-dark)", display: "block" }}>{c.display}</span>
                 <div style={{ fontSize: 13, fontWeight: 700, color: "var(--c-accent)", marginTop: 2 }}><Icons.Volume size={12} color="var(--c-accent)" /> {"\u201C"}{c.sound}{"\u201D"}</div>
               </div>
@@ -110,6 +110,20 @@ export default function LessonIntro({ lesson, teachLetters, lessonCombos, isSoun
         <div style={{ display: "flex", gap: 8, marginTop: 16, flexWrap: "wrap", justifyContent: "center" }}>
           {teachLetters.map(l => (<button key={l.id} className="btn btn-outline" onClick={() => playLetterAudio(l.id, audioType)} style={{ width: "auto", padding: "8px 14px", fontSize: 12 }}><Icons.Volume size={14} color="var(--c-primary)" /> {(isSound || isContrast) ? `"${l.transliteration}"` : l.name}</button>))}
         </div>
+        {/* Pronunciation guides for letters that have articulation data */}
+        {(isSound || isContrast) && teachLetters.some(l => l.articulation) && (
+          <div style={{ width: "100%", maxWidth: 340, display: "flex", flexDirection: "column", gap: 8, marginTop: 20 }}>
+            {teachLetters.filter(l => l.articulation).map(l => {
+              // In contrast lessons, pass the other letter as the comparison partner
+              const contrastWithId = isContrast
+                ? (teachLetters.find(o => o.id !== l.id)?.id || null)
+                : null;
+              return (
+                <PronunciationCard key={l.id} letter={l} audioType={audioType} contrastWithId={contrastWithId} />
+              );
+            })}
+          </div>
+        )}
       </div>
       <div style={{ paddingBottom: 24 }}>
         <button className="btn btn-primary" onClick={() => { sfxLessonStart(); onStartQuiz(); }}>{isContrast ? "Start comparing" : isSound ? "Start listening" : "Let's practice"}</button>

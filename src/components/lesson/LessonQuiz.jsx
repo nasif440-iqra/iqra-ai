@@ -5,6 +5,7 @@ import { getLetter } from "../../data/letters.js";
 import { playGeneratedArabicAudio } from "../../lib/tts.js";
 import { playLetterAudio } from "../../lib/audio.js";
 import StreakBanner from "./StreakBanner.jsx";
+import { PronunciationCompare } from "../PronunciationGuide.jsx";
 
 export default function LessonQuiz({
   currentQ, qIndex, originalQCount, progressPct,
@@ -22,7 +23,13 @@ export default function LessonQuiz({
       return () => clearTimeout(t);
     }
   }, [bannerStreak]);
-  if (!currentQ) return null;
+  if (!currentQ) {
+    return (
+      <div className="screen" style={{ background: "var(--c-bg)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <p style={{ color: "var(--c-text-soft)", fontSize: 14 }}>Loading question...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="screen" style={{ background: "var(--c-bg)", justifyContent: "space-between" }}>
@@ -70,8 +77,8 @@ export default function LessonQuiz({
 
       <div>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-          <button onClick={onBack} style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}><Icons.X size={22} color="var(--c-text-soft)" /></button>
-          <div className="progress-track" style={{ flex: 1 }}>
+          <button onClick={onBack} aria-label="Close lesson" style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}><Icons.X size={22} color="var(--c-text-soft)" /></button>
+          <div className="progress-track" role="progressbar" aria-valuenow={Math.round(progressPct)} aria-valuemin={0} aria-valuemax={100} style={{ flex: 1 }}>
             <motion.div
               className="progress-fill"
               animate={{ width: `${progressPct}%` }}
@@ -80,6 +87,9 @@ export default function LessonQuiz({
           </div>
           <span style={{ fontSize: 13, fontWeight: 700, color: "var(--c-text-soft)", minWidth: 40, textAlign: "right" }}>{Math.min(qIndex + 1, originalQCount)}/{originalQCount}</span>
         </div>
+        {currentQ._recycled && (
+          <p style={{ fontSize: 11, color: "var(--c-text-muted)", textAlign: "center", marginTop: 2, marginBottom: -8, fontStyle: "italic" }}>Review — missed questions come back once</p>
+        )}
       </div>
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center" }}>
@@ -94,25 +104,25 @@ export default function LessonQuiz({
           >
             {currentQ.hasAudio && (
               <div style={{ textAlign: "center", marginBottom: 16 }}>
-                <button onClick={() => playQuestionAudio(currentQ)} style={{ width: 72, height: 72, borderRadius: "50%", border: "2px solid var(--c-accent)", background: "var(--c-accent-light)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px", transition: "all 0.2s", boxShadow: "0 2px 12px rgba(196,164,100,0.15)" }}>
+                <button onClick={() => playQuestionAudio(currentQ)} aria-label="Play audio" style={{ width: 72, height: 72, borderRadius: "50%", border: "2px solid var(--c-accent)", background: "var(--c-accent-light)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px", transition: "all 0.2s", boxShadow: "0 2px 12px rgba(196,164,100,0.15)" }}>
                   <Icons.Volume size={28} color="var(--c-accent)" />
                 </button>
                 <p style={{ fontSize: 16, fontWeight: 700, color: "var(--c-text)" }}>{currentQ.prompt}</p>
-                <button onClick={() => playQuestionAudio(currentQ)} className="btn btn-ghost" style={{ fontSize: 13, color: "var(--c-accent)", marginTop: 4 }}>{"\uD83D\uDD0A"} Replay sound</button>
+                <button onClick={() => playQuestionAudio(currentQ)} aria-label="Replay sound" className="btn btn-ghost" style={{ fontSize: 13, color: "var(--c-accent)", marginTop: 4 }}>{"\uD83D\uDD0A"} Replay sound</button>
               </div>
             )}
             {currentQ.type === "letter_to_sound" && (
               <div style={{ textAlign: "center", marginBottom: 14 }}>
                 <div className="arabic-letter" style={{ fontSize: 100, lineHeight: 1.5, paddingBottom: 6 }}>{currentQ.prompt}</div>
                 <p style={{ fontSize: 15, fontWeight: 600, color: "var(--c-text-soft)", marginTop: 6 }}>{currentQ.promptSubtext}</p>
-                <button onClick={() => playQuestionAudio(currentQ)} className="btn btn-ghost" style={{ fontSize: 13, color: "var(--c-accent)", marginTop: 4 }}>{"\uD83D\uDD0A"} Hear this letter</button>
+                <button onClick={() => playQuestionAudio(currentQ)} aria-label="Hear this letter" className="btn btn-ghost" style={{ fontSize: 13, color: "var(--c-accent)", marginTop: 4 }}>{"\uD83D\uDD0A"} Hear this letter</button>
               </div>
             )}
             {currentQ.type === "letter_to_name" && !currentQ.hasAudio && (
               <div style={{ textAlign: "center", marginBottom: 14 }}>
                 <div className="arabic-letter" style={{ fontSize: 110, lineHeight: 1.5, paddingBottom: 6 }}>{currentQ.prompt}</div>
                 <p style={{ fontSize: 16, fontWeight: 600, color: "var(--c-text-soft)", marginTop: 6 }}>{currentQ.promptSubtext}</p>
-                {currentQ.ttsText && <button onClick={() => { console.log("[AUDIO UI] 'Hear this sound' clicked, ttsText:", currentQ.ttsText); playGeneratedArabicAudio(currentQ.ttsText); }} className="btn btn-ghost" style={{ fontSize: 13, color: "var(--c-accent)", marginTop: 4 }}>{"\uD83D\uDD0A"} Hear this sound</button>}
+                {currentQ.ttsText && <button onClick={() => playGeneratedArabicAudio(currentQ.ttsText)} aria-label="Hear this sound" className="btn btn-ghost" style={{ fontSize: 13, color: "var(--c-accent)", marginTop: 4 }}>{"\uD83D\uDD0A"} Hear this sound</button>}
               </div>
             )}
             {!currentQ.hasAudio && currentQ.type !== "letter_to_name" && currentQ.type !== "letter_to_sound" && (
@@ -150,7 +160,7 @@ export default function LessonQuiz({
                     const isSelectedCorrect = answered && opt.id === selected && isCorrect;
                     const isSelectedWrong = answered && opt.id === selected && !isCorrect;
                     return (
-                      <motion.div
+                      <motion.button
                         key={opt.id}
                         variants={{
                           hidden: { opacity: 0, y: 16 },
@@ -169,6 +179,9 @@ export default function LessonQuiz({
                         })}
                         className={cls}
                         onClick={() => onSelect(opt.id)}
+                        disabled={answered}
+                        aria-label={opt.ariaLabel || opt.label}
+                        aria-pressed={opt.id === selected}
                         style={{ padding: optPad, minHeight: optMin, flexDirection: isCompact && isSndOpt ? "row" : "column", gap: isCompact && isSndOpt ? 10 : undefined, position: "relative" }}
                       >
                         {isSndOpt ? (<><span style={{ fontSize: sndSize, fontWeight: 800, color: (answered && opt.isCorrect) ? "var(--c-primary-dark)" : (answered && opt.id === selected && !isCorrect) ? "var(--c-danger)" : "var(--c-text)", lineHeight: 1 }}>{opt.label}</span>{opt.sublabel && <span style={{ fontSize: isCompact ? 12 : 11, color: "var(--c-text-muted)", marginTop: isCompact ? 0 : 4, textAlign: "center", lineHeight: 1.3 }}>{opt.sublabel}</span>}</>) : (
@@ -191,7 +204,7 @@ export default function LessonQuiz({
                             </motion.span>
                           )}
                         </AnimatePresence>
-                      </motion.div>
+                      </motion.button>
                     );
                   })}
                 </motion.div>
@@ -246,6 +259,10 @@ export default function LessonQuiz({
                   </button>
                 )}
               </div>
+            )}
+            {/* Pronunciation comparison for sound questions when both letters have articulation data */}
+            {isSoundQ && chosenLetter && correctLetter && chosenLetter.id !== correctLetter.id && (chosenLetter.articulation || correctLetter.articulation) && (
+              <PronunciationCompare chosenLetter={chosenLetter} correctLetter={correctLetter} audioType={audioType} />
             )}
             <button className="btn btn-primary" onClick={onNext} style={{ fontSize: 14, marginTop: 2 }}>Got It</button>
           </div>

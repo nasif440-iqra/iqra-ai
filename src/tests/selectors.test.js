@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { getCurrentLesson, getLearnedLetterIds, getPhaseCounts, getDueLetters } from "../lib/selectors.js";
+import { LESSONS } from "../data/lessons.js";
+import { getCurrentLesson, getCurrentUnlockedLesson, getLearnedLetterIds, getPhaseCounts, getDailyGoal, getDueLetters, getLessonsCompletedCount, getLastCompletedLesson } from "../lib/selectors.js";
+
+const ALL_IDS = LESSONS.map(l => l.id);
+const LAST_LESSON_ID = LESSONS[LESSONS.length - 1].id;
+const TOTAL_LESSONS = LESSONS.length;
 
 describe("getCurrentLesson", () => {
   it("returns lesson 1 when nothing is completed", () => {
@@ -18,9 +23,8 @@ describe("getCurrentLesson", () => {
   });
 
   it("returns last lesson when all are completed", () => {
-    const allIds = Array.from({ length: 83 }, (_, i) => i + 1);
-    const result = getCurrentLesson(allIds);
-    expect(result.id).toBe(83);
+    const result = getCurrentLesson(ALL_IDS);
+    expect(result.id).toBe(LAST_LESSON_ID);
   });
 });
 
@@ -60,10 +64,10 @@ describe("getPhaseCounts", () => {
 
   it("returns correct totals", () => {
     const counts = getPhaseCounts([]);
-    expect(counts.p1Total).toBe(43);
-    expect(counts.p2Total).toBe(22);
-    expect(counts.p3Total).toBe(18);
-    expect(counts.p1Total + counts.p2Total + counts.p3Total).toBe(83);
+    expect(counts.p1Total).toBe(LESSONS.filter(l => l.phase === 1).length);
+    expect(counts.p2Total).toBe(LESSONS.filter(l => l.phase === 2).length);
+    expect(counts.p3Total).toBe(LESSONS.filter(l => l.phase === 3).length);
+    expect(counts.p1Total + counts.p2Total + counts.p3Total).toBe(TOTAL_LESSONS);
   });
 });
 
@@ -96,5 +100,74 @@ describe("getDueLetters", () => {
       1: { correct: 3, attempts: 4 },
     };
     expect(getDueLetters(progress, "2026-03-24")).toEqual([]);
+  });
+});
+
+describe("getCurrentUnlockedLesson", () => {
+  it("returns lesson 1 when nothing is completed", () => {
+    const result = getCurrentUnlockedLesson([]);
+    expect(result.id).toBe(1);
+  });
+
+  it("returns lesson 2 when lesson 1 is completed", () => {
+    const result = getCurrentUnlockedLesson([1]);
+    expect(result.id).toBe(2);
+  });
+
+  it("skips to the first uncompleted unlocked lesson", () => {
+    const result = getCurrentUnlockedLesson([1, 2, 3]);
+    expect(result.id).toBe(4);
+  });
+
+  it("does not return a locked Phase 2 lesson when Phase 1 threshold is not met", () => {
+    // Complete only a few Phase 1 lessons — not enough to unlock Phase 2
+    const completed = [1, 2, 3, 4, 5];
+    const result = getCurrentUnlockedLesson(completed);
+    // Should return the next Phase 1 lesson, not Phase 2
+    expect(result.phase).toBe(1);
+  });
+
+  it("returns last lesson when all are completed", () => {
+    const result = getCurrentUnlockedLesson(ALL_IDS);
+    expect(result.id).toBe(LAST_LESSON_ID);
+  });
+});
+
+describe("getDailyGoal", () => {
+  it("returns 1 when no goal set", () => {
+    expect(getDailyGoal(null)).toBe(1);
+    expect(getDailyGoal(undefined)).toBe(1);
+  });
+
+  it("computes goal from minutes string", () => {
+    expect(getDailyGoal("3")).toBe(1);
+    expect(getDailyGoal("5")).toBe(1);
+    expect(getDailyGoal("10")).toBe(2);
+  });
+});
+
+describe("getLessonsCompletedCount", () => {
+  it("returns 0 for empty array", () => {
+    expect(getLessonsCompletedCount([])).toBe(0);
+  });
+
+  it("returns count of completed lessons", () => {
+    expect(getLessonsCompletedCount([1, 2, 3])).toBe(3);
+  });
+});
+
+describe("getLastCompletedLesson", () => {
+  it("returns null for empty array", () => {
+    expect(getLastCompletedLesson([])).toBeNull();
+  });
+
+  it("returns the lesson with the highest completed ID", () => {
+    const result = getLastCompletedLesson([1, 5, 3]);
+    expect(result.id).toBe(5);
+  });
+
+  it("works with phase 2/3 lesson IDs", () => {
+    const result = getLastCompletedLesson([1, 2, 44]);
+    expect(result.id).toBe(44);
   });
 });

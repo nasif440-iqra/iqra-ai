@@ -117,6 +117,52 @@
   100% { opacity: 1; transform: translateX(0); }
 }
 
+@keyframes glowExpand {
+  0% { transform: scale(0); opacity: 0; }
+  50% { opacity: 0.6; }
+  100% { transform: scale(1); opacity: 0.4; }
+}
+
+@keyframes pulseRing {
+  0% { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+
+@keyframes shoot {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+}
+
+@keyframes borderWipe {
+  0% { clip-path: inset(0 100% 0 0); }
+  100% { clip-path: inset(0 0 0 0); }
+}
+
+@keyframes drawCheck {
+  0% { stroke-dashoffset: 100; }
+  100% { stroke-dashoffset: 0; }
+}
+
+@keyframes floatLetter {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-8px) scale(1.02); }
+}
+
+@keyframes glowBreathSlow {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.06); }
+}
+
+@keyframes floatAlif {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+
+@keyframes pulsingGoldBorder {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(196,164,100,0), 0 4px 16px rgba(22, 51, 35, 0.20); }
+  50% { box-shadow: 0 0 20px rgba(196,164,100,0.25), 0 4px 16px rgba(22, 51, 35, 0.20); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

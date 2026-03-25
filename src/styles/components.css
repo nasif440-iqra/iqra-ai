@@ -1,5 +1,17 @@
-.fade-up { animation: fadeUp 0.5s ease both; }
-.scale-in { animation: scaleIn 0.4s ease both; }
+/* ── Motion tokens (CSS custom properties) ── */
+:root {
+  --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-enter: cubic-bezier(0, 0, 0.2, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast: 150ms;
+  --dur-normal: 250ms;
+  --dur-slow: 400ms;
+  --dur-reveal: 500ms;
+}
+
+.fade-up { animation: fadeUp var(--dur-reveal) var(--ease-enter) both; }
+.scale-in { animation: scaleIn var(--dur-slow) var(--ease-enter) both; }
 
 /* ── Buttons ── */
 .btn {
@@ -14,15 +26,23 @@
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: transform var(--dur-fast) var(--ease-default),
+              background var(--dur-normal) var(--ease-default),
+              box-shadow var(--dur-normal) var(--ease-default),
+              opacity var(--dur-normal) var(--ease-default);
   width: 100%;
   text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
 }
-.btn:active { transform: scale(0.98); }
+.btn:hover { opacity: 0.92; }
+.btn:active { transform: scale(0.97); }
 .btn-primary { background: var(--c-primary); color: white; box-shadow: 0 4px 16px rgba(22, 51, 35, 0.20); }
+.btn-primary:active { box-shadow: 0 2px 8px rgba(22, 51, 35, 0.15); }
 .btn-secondary { background: var(--c-primary-light); color: white; }
 .btn-outline { background: transparent; color: var(--c-primary); border: 2px solid var(--c-border); }
+.btn-outline:hover { border-color: var(--c-primary); }
 .btn-ghost { background: transparent; color: var(--c-text-soft); padding: 10px 16px; font-weight: 600; }
+.btn-ghost:hover { color: var(--c-text); }
 
 /* ── Screen / Layout ── */
 .screen { padding: 24px 20px; min-height: 100vh; display: flex; flex-direction: column; }
@@ -30,7 +50,7 @@
 
 /* ── Progress ── */
 .progress-track { width: 100%; height: 8px; background: var(--c-border); border-radius: 4px; overflow: hidden; }
-.progress-fill { height: 100%; background: linear-gradient(90deg, var(--c-primary) 0%, var(--c-primary-light) 100%); border-radius: 4px; transition: width 0.5s ease; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--c-primary) 0%, var(--c-primary-light) 100%); border-radius: 4px; transition: width var(--dur-reveal) var(--ease-default); }
 
 /* ── Card ── */
 .card { background: var(--c-bg-card); border-radius: var(--radius); padding: 24px; border: 1px solid var(--c-border); box-shadow: var(--shadow-card); }
@@ -74,10 +94,13 @@
   cursor: pointer;
   padding: 6px 16px;
   border-radius: 12px;
-  transition: all 0.2s;
+  transition: transform var(--dur-fast) var(--ease-default),
+              background var(--dur-normal) var(--ease-default);
   font-family: var(--font-body);
+  -webkit-tap-highlight-color: transparent;
 }
-.nav-item span { font-size: 10px; font-weight: 700; color: var(--c-text-muted); letter-spacing: 0.03em; }
+.nav-item:active { transform: scale(0.93); }
+.nav-item span { font-size: 10px; font-weight: 700; color: var(--c-text-muted); letter-spacing: 0.03em; transition: color var(--dur-normal) var(--ease-default); }
 .nav-item.active span { color: var(--c-primary); font-weight: 700; }
 
 /* ── Quiz Options ── */
@@ -86,7 +109,10 @@
   border-radius: var(--radius-btn);
   background: var(--c-bg-card);
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: border-color var(--dur-fast) var(--ease-default),
+              background var(--dur-fast) var(--ease-default),
+              transform var(--dur-fast) var(--ease-default),
+              box-shadow var(--dur-normal) var(--ease-default);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -95,11 +121,18 @@
   -webkit-tap-highlight-color: transparent;
   box-shadow: var(--shadow-soft);
 }
+.quiz-option:hover { border-color: var(--c-primary); box-shadow: 0 2px 12px rgba(22, 51, 35, 0.08); }
 .quiz-option:active { transform: scale(0.95); }
-.quiz-option.correct { border-color: var(--c-primary); background: var(--c-primary-soft); animation: pop 0.35s ease both, correctGlow 0.6s ease 0.15s both; }
-.quiz-option.wrong { border-color: var(--c-danger); background: var(--c-danger-light); animation: shake 0.4s ease both; }
-.quiz-option.revealed-correct { border-color: var(--c-primary); background: var(--c-primary-soft); animation: glowPulse 0.8s ease both; }
+.quiz-option.correct { border-color: var(--c-primary); background: var(--c-primary-soft); animation: pop 0.35s var(--ease-bounce) both, correctGlow 0.6s var(--ease-default) 0.15s both; }
+.quiz-option.wrong { border-color: var(--c-danger); background: var(--c-danger-light); animation: shake var(--dur-slow) var(--ease-default) both; }
+.quiz-option.revealed-correct { border-color: var(--c-primary); background: var(--c-primary-soft); animation: glowPulse 0.8s var(--ease-default) both; }
 .quiz-option.disabled { pointer-events: none; opacity: 0.55; }
+button.quiz-option {
+  font: inherit;
+  text-align: center;
+  background: inherit;
+  color: inherit;
+}
 
 /* ── Noor Companion ── */
 .noor-glow {
@@ -115,20 +148,71 @@
 .lesson-recap { animation: recapSlide 0.5s ease both; }
 
 /* ── Phase Card ── */
-.phase-card { background: var(--c-bg-card); border-radius: 20px; border: 1px solid var(--c-border); box-shadow: var(--shadow-soft); overflow: hidden; transition: box-shadow 0.2s ease; }
-.phase-card-header { display: flex; align-items: center; gap: 14px; padding: 16px 18px; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; transition: background 0.15s ease; }
+.phase-card { background: var(--c-bg-card); border-radius: 20px; border: 1px solid var(--c-border); box-shadow: var(--shadow-soft); overflow: hidden; transition: box-shadow var(--dur-normal) var(--ease-default); }
+.phase-card-header { display: flex; align-items: center; gap: 14px; padding: 16px 18px; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; transition: background var(--dur-fast) var(--ease-default); }
 .phase-card-header:active { background: rgba(0, 0, 0, 0.015); }
-.phase-body { overflow: hidden; transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease; opacity: 1; }
+.phase-body { overflow: hidden; transition: max-height 350ms var(--ease-default), opacity var(--dur-normal) var(--ease-default); opacity: 1; }
 .phase-body.collapsed { max-height: 0 !important; opacity: 0; }
-.phase-lesson-row { display: flex; align-items: center; gap: 12px; padding: 12px 18px; cursor: pointer; transition: background 0.12s ease; -webkit-tap-highlight-color: transparent; }
+.phase-lesson-row { display: flex; align-items: center; gap: 12px; padding: 12px 18px; cursor: pointer; transition: background var(--dur-fast) var(--ease-default); -webkit-tap-highlight-color: transparent; }
 .phase-lesson-row:active { background: rgba(22, 51, 35, 0.03); }
 .phase-lesson-row + .phase-lesson-row { border-top: 1px solid var(--c-border); }
 
 /* ── Speaking ── */
-.mic-btn { width: 88px; height: 88px; border-radius: 50%; border: none; background: var(--c-primary); color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; box-shadow: 0 4px 22px rgba(22, 51, 35, 0.35); }
+.mic-btn { width: 88px; height: 88px; border-radius: 50%; border: none; background: var(--c-primary); color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform var(--dur-fast) var(--ease-default), box-shadow var(--dur-normal) var(--ease-default); box-shadow: 0 4px 22px rgba(22, 51, 35, 0.35); -webkit-tap-highlight-color: transparent; }
 .mic-btn:active { transform: scale(0.93); }
 .mic-btn.recording { animation: recording 1.2s ease infinite; background: var(--c-primary-dark); }
 .speak-score-ring { width: 100px; height: 100px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-direction: column; position: relative; animation: scoreReveal 0.5s ease both; }
 .speak-score-ring::before { content: ''; position: absolute; inset: 0; border-radius: 50%; border: 5px solid var(--c-border); }
 .speak-score-ring.pass::before { border-color: var(--c-primary); }
 .speak-score-ring.fail::before { border-color: var(--c-accent); }
+
+/* ── Onboarding glow orbs ── */
+.glow-orb {
+  background: radial-gradient(circle, rgba(196,164,100,0.15) 0%, rgba(248,246,240,0) 70%);
+}
+
+.glow-orb-warm {
+  background: radial-gradient(circle, rgba(196,164,100,0.25) 0%, rgba(242,234,222,0) 70%);
+}
+
+/* Shimmer text effect for "Iqra" */
+.shimmer-text {
+  background: linear-gradient(90deg, #163323 0%, #C4A464 25%, #163323 50%, #C4A464 75%, #163323 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 3s linear infinite;
+}
+
+/* Animated checkmark path */
+.checkmark-path {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: drawCheck 0.6s ease-out forwards;
+}
+
+/* Particles for quiz celebration */
+.ob-particle {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: var(--c-accent);
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+}
+
+/* Segmented progress bar */
+.ob-progress-track {
+  height: 4px;
+  flex: 1;
+  border-radius: 9999px;
+  background: rgba(138, 133, 122, 0.2);
+  overflow: hidden;
+}
+
+.ob-progress-fill {
+  height: 100%;
+  transition: width 0.5s ease-out;
+}

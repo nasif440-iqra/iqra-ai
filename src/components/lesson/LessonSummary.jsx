@@ -1,13 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import confetti from "canvas-confetti";
 import { useMotionValue, animate } from "framer-motion";
 import { LESSONS } from "../../data/lessons.js";
 import { getLetter } from "../../data/letters.js";
-import { sfxTap, sfxComplete, sfxCompletePerfect } from "../../lib/audio.js";
+import { sfxTap } from "../../lib/audio.js";
 import { Icons } from "../Icons.jsx";
-import { pickCopy, getCompletionTier, getLessonRecap, COMPLETION_HEADLINES, COMPLETION_SUBLINES, CLOSING_QUOTES } from "../../lib/engagement.js";
+import { pickCopy, getCompletionTier, getSummaryMessaging, COMPLETION_HEADLINES, COMPLETION_SUBLINES, CLOSING_QUOTES } from "../../lib/engagement.js";
 
-export default function LessonSummary({ lesson, lessonId, teachLetters, lessonCombos, quizResults, speakResults, lessonsCompleted, isHarakatIntro, isHarakatApplied, onComplete, onBack, onStartSpeak }) {
+export default function LessonSummary({ lesson, lessonId, teachLetters, lessonCombos, quizResults, speakResults, lessonsCompleted, isHarakatIntro, isHarakatApplied, onComplete, onBack, onStartSpeak, speakingEnabled }) {
   const qC = quizResults.filter(r => r.correct).length;
   const qT = quizResults.length;
   const qP = qT > 0 ? Math.round((qC / qT) * 100) : 0;
@@ -17,12 +17,6 @@ export default function LessonSummary({ lesson, lessonId, teachLetters, lessonCo
   // Animated accuracy counter
   const motionPct = useMotionValue(0);
   const [displayPct, setDisplayPct] = useState(0);
-
-  useEffect(() => {
-    // Play completion sound on mount
-    if (qP === 100) sfxCompletePerfect();
-    else if (qP >= 60) sfxComplete();
-  }, []);
 
   useEffect(() => {
     const unsubscribe = motionPct.on("change", v => setDisplayPct(Math.round(v)));
@@ -157,7 +151,7 @@ export default function LessonSummary({ lesson, lessonId, teachLetters, lessonCo
   const tier = getCompletionTier(qP, isFirst, isHarakatApplied);
   const headline = COMPLETION_HEADLINES[tier];
   const subline = COMPLETION_SUBLINES[tier];
-  const recap = getLessonRecap(lesson, teachLetters, lessonCombos);
+  const { sectionHeading, recap } = getSummaryMessaging(lesson, teachLetters, lessonCombos, qP);
   const isSound = lesson.lessonMode === "sound";
   const isContrast = lesson.lessonMode === "contrast";
   const nextHints = next ? [
@@ -168,6 +162,7 @@ export default function LessonSummary({ lesson, lessonId, teachLetters, lessonCo
     next.lessonMode === "sound" ? "Listen and learn how it sounds" : "See if you can spot the difference",
     "This builds on what you just learned"
   ] : [];
+  const nextHint = useMemo(() => next ? pickCopy(nextHints) : "", [next?.id]);
 
   return (
     <div className="screen" style={{ justifyContent: "center", alignItems: "center", textAlign: "center" }}>
@@ -187,14 +182,14 @@ export default function LessonSummary({ lesson, lessonId, teachLetters, lessonCo
       </div>
 
       <div className="lesson-recap" style={{ width: "100%", marginTop: 16, padding: "12px 16px", borderRadius: 16, background: "var(--c-primary-soft)", border: "1px solid rgba(22,51,35,0.08)", textAlign: "center", animationDelay: "0.15s" }}>
-        <p style={{ fontSize: 12, fontWeight: 700, color: "var(--c-primary)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>What you learned</p>
+        <p style={{ fontSize: 12, fontWeight: 700, color: "var(--c-primary)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>{sectionHeading}</p>
         <p style={{ fontSize: 13, color: "var(--c-primary-dark)", lineHeight: 1.5 }}>{recap}</p>
       </div>
 
-      {lesson.hasSpeaking && teachLetters.length > 0 && speakResults.length === 0 && (
+      {speakingEnabled && lesson.hasSpeaking && teachLetters.length > 0 && speakResults.length === 0 && onStartSpeak && (
         <div style={{ width: "100%", marginTop: 12, animation: "subtleLift 0.4s ease 0.2s both" }}>
-          <button className="btn btn-outline" onClick={() => { sfxTap(); onStartSpeak(); }} style={{ fontSize: 14, color: "var(--c-accent)", borderColor: "var(--c-accent-light)" }}>
-            {"\uD83C\uDFA4"} Want to try saying {teachLetters.length === 1 ? `${teachLetters[0].name}` : "them"}? <span style={{ fontSize: 12, fontWeight: 600, color: "var(--c-text-muted)", marginLeft: 4 }}>Practice only</span>
+          <button className="btn btn-outline" onClick={onStartSpeak} style={{ width: "100%" }}>
+            {"\uD83C\uDF99\uFE0F"} Practice pronunciation
           </button>
         </div>
       )}
@@ -205,7 +200,7 @@ export default function LessonSummary({ lesson, lessonId, teachLetters, lessonCo
           <p style={{ fontSize: 11, fontWeight: 700, color: "var(--c-text-muted)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>Up next</p>
           <div style={{ display: "flex", justifyContent: "center", gap: 10, marginBottom: 4 }}>{nextL.slice(0, 3).map(l => <span key={l.id} style={{ fontFamily: "var(--font-arabic)", fontSize: 28, color: "var(--c-primary-dark)", opacity: 0.7, lineHeight: 1.4 }}>{l.letter}</span>)}</div>
           <p style={{ fontFamily: "var(--font-heading)", fontSize: 14, fontWeight: 600, color: "var(--c-text)" }}>{next.title}</p>
-          <p style={{ fontSize: 12, color: "var(--c-primary)", fontWeight: 600, marginTop: 4 }}>{pickCopy(nextHints)}</p>
+          <p style={{ fontSize: 12, color: "var(--c-primary)", fontWeight: 600, marginTop: 4 }}>{nextHint}</p>
         </div>
       )}
 

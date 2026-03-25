@@ -1,10 +1,16 @@
 import { LESSONS, PHASE_1_COMPLETION_THRESHOLD, PHASE_2_COMPLETION_THRESHOLD } from "../data/lessons.js";
 
 const STORAGE_KEY = "iqra_progress";
+export const PROGRESS_SCHEMA_VERSION = 3;
+
+const VALID_LESSON_IDS = new Set(LESSONS.map(l => l.id));
 
 /** Call from browser console: resetProgress() — wipes saved state so the app starts fresh. */
 export function resetProgress() {
   localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem("hasCompletedOnboarding");
+  localStorage.removeItem("onboardingIntention");
+  localStorage.removeItem("onboardingDailyGoal");
   localStorage.removeItem("lastHadithInterstitialDate");
   location.reload();
 }
@@ -22,93 +28,248 @@ function loadRaw() {
   }
 }
 
-export function loadProgress() {
-  const data = loadRaw();
-  let completedLessonIds = Array.isArray(data?.completedLessonIds) ? data.completedLessonIds.filter(id => typeof id === "number") : [];
-
-  // Old Phase 2 lived at IDs 14-34, now renumbered to 44-64
-  // Old Phase 3 lived at IDs 35-52, now renumbered to 66-83
-  // Clear any stored IDs in the old ranges so users aren't marked
-  // as having completed lessons that no longer exist at those IDs.
-  const OLD_RENUMBERED_IDS = new Set();
-  for (let i = 44; i <= 83; i++) OLD_RENUMBERED_IDS.add(i);
-  if (completedLessonIds.some(id => OLD_RENUMBERED_IDS.has(id))) {
-    console.log("[Iqra] Migrating progress: clearing old lesson IDs 44-83 (Phase 2/3 renumbered).");
-    completedLessonIds = completedLessonIds.filter(id => !OLD_RENUMBERED_IDS.has(id));
+/** Sanitize completedLessonIds: numeric, deduplicated, valid, sorted */
+export function sanitizeCompletedIds(ids) {
+  if (!Array.isArray(ids)) return [];
+  const seen = new Set();
+  const result = [];
+  for (const id of ids) {
+    if (typeof id === "number" && VALID_LESSON_IDS.has(id) && !seen.has(id)) {
+      seen.add(id);
+      result.push(id);
+    }
   }
+  return result.sort((a, b) => a - b);
+}
 
+// ── Migration from v0/v1/v2 flat progress to v3 mastery.entities ──
+
+/**
+ * Migrate old flat progress map (keyed by numeric IDs) to mastery.entities
+ * with normalized "letter:<id>" keys.
+ */
+export function migrateFlatProgressToEntities(flatProgress) {
+  if (!flatProgress || typeof flatProgress !== "object") return {};
+  const entities = {};
+  for (const [rawId, entry] of Object.entries(flatProgress)) {
+    if (!entry || typeof entry !== "object") continue;
+    const numId = parseInt(rawId, 10);
+    // Numeric keys become letter entities; string keys that look like combos become combo entities
+    if (!isNaN(numId)) {
+      entities[`letter:${numId}`] = { ...entry };
+    } else if (typeof rawId === "string" && rawId.includes("-")) {
+      entities[`combo:${rawId}`] = { ...entry };
+    }
+  }
+  return entities;
+}
+
+/**
+ * Create the empty v3 mastery shape.
+ */
+export function emptyMastery() {
   return {
-    onboarded: data?.onboarded === true,
-    progress: (data?.progress && typeof data.progress === "object") ? data.progress : {},
-    completedLessonIds,
-    lessonsCompleted: typeof data?.lessonsCompleted === "number" ? data.lessonsCompleted : 0,
-    lastCompletedLessonId: typeof data?.lastCompletedLessonId === "number" ? data.lastCompletedLessonId : null,
-    // Wird & daily tracking — migration-safe defaults
-    lastPracticeDate: typeof data?.lastPracticeDate === "string" ? data.lastPracticeDate : null,
-    currentWird: typeof data?.currentWird === "number" ? data.currentWird : 0,
-    longestWird: typeof data?.longestWird === "number" ? data.longestWird : 0,
-    todayLessonCountDate: typeof data?.todayLessonCountDate === "string" ? data.todayLessonCountDate : null,
-    todayLessonCount: typeof data?.todayLessonCount === "number" ? data.todayLessonCount : 0,
+    entities: {},
+    skills: {},
+    confusions: {},
   };
 }
 
-export function saveProgress({ onboarded, progress, completedLessonIds, lessonsCompleted, lastCompletedLessonId, lastPracticeDate, currentWird, longestWird, todayLessonCountDate, todayLessonCount }) {
+/**
+ * Create the empty v3 habit shape.
+ */
+function defaultHabit() {
+  return {
+    lastPracticeDate: null,
+    currentWird: 0,
+    longestWird: 0,
+    todayLessonCountDate: null,
+    todayLessonCount: 0,
+  };
+}
+
+export function loadProgress() {
+  const data = loadRaw();
+  const storedVersion = typeof data?.schemaVersion === "number" ? data.schemaVersion : 0;
+
+  // ── Onboarding migration (legacy loose localStorage keys) ──
+  let onboarded = data?.onboarded === true;
+  let onboardingIntention = typeof data?.onboardingIntention === "string" ? data.onboardingIntention : null;
+  let onboardingDailyGoal = typeof data?.onboardingDailyGoal === "string" ? data.onboardingDailyGoal : null;
+
+  if (!onboarded && typeof window !== "undefined" && localStorage.getItem("hasCompletedOnboarding") === "true") {
+    onboarded = true;
+  }
+  if (!onboardingIntention && typeof window !== "undefined") {
+    const legacy = localStorage.getItem("onboardingIntention");
+    if (legacy) onboardingIntention = legacy;
+  }
+  if (!onboardingDailyGoal && typeof window !== "undefined") {
+    const legacy = localStorage.getItem("onboardingDailyGoal");
+    if (legacy) onboardingDailyGoal = legacy;
+  }
+
+  // ── Lesson completion ──
+  let completedLessonIds;
+  if (storedVersion >= 3 && data?.lessonCompletion?.completedLessonIds) {
+    completedLessonIds = sanitizeCompletedIds(data.lessonCompletion.completedLessonIds);
+  } else {
+    completedLessonIds = sanitizeCompletedIds(data?.completedLessonIds);
+  }
+
+  // ── Mastery ──
+  let mastery;
+  if (storedVersion >= 3 && data?.mastery) {
+    mastery = {
+      entities: (data.mastery.entities && typeof data.mastery.entities === "object") ? data.mastery.entities : {},
+      skills: (data.mastery.skills && typeof data.mastery.skills === "object") ? data.mastery.skills : {},
+      confusions: (data.mastery.confusions && typeof data.mastery.confusions === "object") ? data.mastery.confusions : {},
+    };
+  } else {
+    // Migrate from v0/v1/v2 flat progress
+    const flatProgress = (data?.progress && typeof data.progress === "object") ? data.progress : {};
+    mastery = {
+      entities: migrateFlatProgressToEntities(flatProgress),
+      skills: {},
+      confusions: {},
+    };
+  }
+
+  // ── Habit ──
+  let habit;
+  if (storedVersion >= 3 && data?.habit) {
+    habit = {
+      lastPracticeDate: typeof data.habit.lastPracticeDate === "string" ? data.habit.lastPracticeDate : null,
+      currentWird: typeof data.habit.currentWird === "number" ? data.habit.currentWird : 0,
+      longestWird: typeof data.habit.longestWird === "number" ? data.habit.longestWird : 0,
+      todayLessonCountDate: typeof data.habit.todayLessonCountDate === "string" ? data.habit.todayLessonCountDate : null,
+      todayLessonCount: typeof data.habit.todayLessonCount === "number" ? data.habit.todayLessonCount : 0,
+    };
+  } else {
+    // Migrate from flat v2 fields
+    habit = {
+      lastPracticeDate: typeof data?.lastPracticeDate === "string" ? data.lastPracticeDate : null,
+      currentWird: typeof data?.currentWird === "number" ? data.currentWird : 0,
+      longestWird: typeof data?.longestWird === "number" ? data.longestWird : 0,
+      todayLessonCountDate: typeof data?.todayLessonCountDate === "string" ? data.todayLessonCountDate : null,
+      todayLessonCount: typeof data?.todayLessonCount === "number" ? data.todayLessonCount : 0,
+    };
+  }
+
+  // ── New onboarding fields (v2 onboarding) ──
+  const onboardingStartingPoint = typeof data?.onboardingStartingPoint === "string" ? data.onboardingStartingPoint : null;
+  const onboardingMotivation = typeof data?.onboardingMotivation === "string" ? data.onboardingMotivation : null;
+  const onboardingVersion = typeof data?.onboardingVersion === "number" ? data.onboardingVersion : (onboarded ? 1 : 2);
+  // Legacy users (v1) who already completed the old onboarding should NOT be
+  // routed into the post-lesson commitment flow. Default their commitment to true.
+  const onboardingCommitmentComplete = data?.onboardingCommitmentComplete === true || (onboarded && onboardingVersion < 2);
+
+  return {
+    schemaVersion: PROGRESS_SCHEMA_VERSION,
+    onboarded,
+    onboardingIntention,
+    onboardingDailyGoal,
+    onboardingStartingPoint,
+    onboardingMotivation,
+    onboardingCommitmentComplete,
+    onboardingVersion,
+    completedLessonIds,
+    mastery,
+    habit,
+    // Legacy compat: expose flat "progress" view derived from mastery.entities
+    // so existing consumers (LessonScreen, questions) keep working without changes.
+    progress: buildLegacyProgressView(mastery.entities),
+  };
+}
+
+/**
+ * Build a flat progress map from mastery.entities for backward-compat consumers.
+ * Strips the "letter:" prefix so keys are numeric again.
+ */
+export function buildLegacyProgressView(entities) {
+  const flat = {};
+  for (const [key, entry] of Object.entries(entities)) {
+    if (key.startsWith("letter:")) {
+      const numId = parseInt(key.slice(7), 10);
+      if (!isNaN(numId)) flat[numId] = entry;
+    }
+    // combo entries are not needed in the old flat view
+  }
+  return flat;
+}
+
+/** Returns true on success, false on failure (storage full or unavailable). */
+export function saveProgress({ onboarded, onboardingIntention, onboardingDailyGoal, onboardingStartingPoint, onboardingMotivation, onboardingCommitmentComplete, onboardingVersion, completedLessonIds, mastery, habit }) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      schemaVersion: PROGRESS_SCHEMA_VERSION,
       onboarded,
-      progress,
-      completedLessonIds,
-      lessonsCompleted,
-      lastCompletedLessonId,
-      lastPracticeDate,
-      currentWird,
-      longestWird,
-      todayLessonCountDate,
-      todayLessonCount,
+      onboardingIntention: onboardingIntention || null,
+      onboardingDailyGoal: onboardingDailyGoal || null,
+      onboardingStartingPoint: onboardingStartingPoint || null,
+      onboardingMotivation: onboardingMotivation || null,
+      onboardingCommitmentComplete: onboardingCommitmentComplete || false,
+      onboardingVersion: onboardingVersion || 2,
+      lessonCompletion: {
+        completedLessonIds,
+      },
+      mastery,
+      habit,
     }));
+    return true;
   } catch {
-    // Storage full or unavailable — silently fail
+    console.error("[Progress] Failed to save — localStorage may be full");
+    return false;
   }
 }
 
-/* ── Date helpers ── */
-
-export function getTodayDateString() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+/** Export all progress data as a JSON string for backup. */
+export function exportProgressJSON() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw || "{}";
+  } catch {
+    return "{}";
+  }
 }
 
-export function getDayDifference(dateA, dateB) {
-  // Parse YYYY-MM-DD strings as local dates and return whole calendar day difference
-  const a = new Date(dateA + "T00:00:00");
-  const b = new Date(dateB + "T00:00:00");
-  return Math.round((a - b) / (1000 * 60 * 60 * 24));
+/** Import progress data from a JSON string. Returns true on success. */
+export function importProgressJSON(jsonStr) {
+  try {
+    const data = JSON.parse(jsonStr);
+    if (typeof data !== "object" || data === null) return false;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    return true;
+  } catch {
+    return false;
+  }
 }
+
+/* ── Date helpers (re-exported from shared module) ── */
+
+export { getTodayDateString, getDayDifference } from "./dateUtils.js";
+import { getTodayDateString, getDayDifference } from "./dateUtils.js";
 
 /* ── Wird recalculation on app open ── */
 
-export function recalculateWirdOnAppOpen(prog) {
+export function recalculateWirdOnAppOpen(habit) {
   const today = getTodayDateString();
   let changed = false;
-  let result = { ...prog };
+  let result = { ...habit };
 
-  // Normalize daily lesson count for a new day
   if (result.todayLessonCountDate !== today) {
     result = { ...result, todayLessonCount: 0, todayLessonCountDate: today };
     changed = true;
   }
 
-  // If no practice date recorded yet, nothing to normalize
   if (!result.lastPracticeDate) return { result, changed };
 
   const gap = getDayDifference(today, result.lastPracticeDate);
 
   if (gap <= 1) {
-    // Practiced today or yesterday — wird unchanged
     return { result, changed };
   }
 
-  // Gap of 2+ days — reset current wird
   if (result.currentWird !== 0) {
     result = { ...result, currentWird: 0 };
     changed = true;
@@ -119,20 +280,17 @@ export function recalculateWirdOnAppOpen(prog) {
 
 /* ── Record practice on lesson completion ── */
 
-export function recordPractice(prog) {
+export function recordPractice(habit) {
   const today = getTodayDateString();
-  let result = { ...prog };
+  let result = { ...habit };
 
-  // Normalize daily count date first
   if (result.todayLessonCountDate !== today) {
     result = { ...result, todayLessonCount: 0, todayLessonCountDate: today };
   }
 
-  // Increment daily lesson count
   result = { ...result, todayLessonCount: result.todayLessonCount + 1 };
 
   if (!result.lastPracticeDate) {
-    // First ever practice
     result = { ...result, lastPracticeDate: today, currentWird: 1, longestWird: Math.max(result.longestWird, 1) };
     return result;
   }
@@ -140,63 +298,23 @@ export function recordPractice(prog) {
   const gap = getDayDifference(today, result.lastPracticeDate);
 
   if (gap === 0) {
-    // Already practiced today — do NOT increment wird
     result = { ...result, lastPracticeDate: today };
     return result;
   }
 
   if (gap === 1) {
-    // Practiced yesterday — extend wird
     const newWird = result.currentWird + 1;
     result = { ...result, lastPracticeDate: today, currentWird: newWird, longestWird: Math.max(result.longestWird, newWird) };
     return result;
   }
 
-  // Gap 2+ days — restart wird
   result = { ...result, lastPracticeDate: today, currentWird: 1, longestWird: Math.max(result.longestWird, 1) };
   return result;
 }
 
-/* ── SRS helpers ── */
+/* ── SRS (use mastery.js updateEntitySRS — this re-export keeps old imports working) ── */
 
-function addDateDays(dateStr, days) {
-  const d = new Date(dateStr + "T00:00:00");
-  d.setDate(d.getDate() + days);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-
-const SRS_INTERVALS = { 1: 1, 2: 3, 3: 7, 4: 14 };
-
-/**
- * Pure function: compute the next SRS state for a single letter entry.
- * @param {{ correct: number, attempts: number, lastSeen?: string|null, nextReview?: string|null, intervalDays?: number, sessionStreak?: number }} entry
- * @param {boolean} wasCorrect - whether the user got this letter correct overall in the session
- * @param {string} today - YYYY-MM-DD
- * @returns {object} updated entry
- */
-export function updateLetterSRS(entry, wasCorrect, today) {
-  const e = {
-    correct: entry?.correct ?? 0,
-    attempts: entry?.attempts ?? 0,
-    lastSeen: entry?.lastSeen ?? null,
-    nextReview: entry?.nextReview ?? null,
-    intervalDays: entry?.intervalDays ?? 1,
-    sessionStreak: entry?.sessionStreak ?? 0,
-  };
-
-  if (wasCorrect) {
-    e.sessionStreak += 1;
-    e.intervalDays = SRS_INTERVALS[e.sessionStreak] ?? 30;
-    e.nextReview = addDateDays(today, e.intervalDays);
-  } else {
-    e.sessionStreak = 0;
-    e.intervalDays = 1;
-    e.nextReview = today; // due again immediately
-  }
-
-  e.lastSeen = today;
-  return e;
-}
+export { updateEntitySRS as updateLetterSRS } from "./mastery.js";
 
 /* ── Phase helpers ── */
 
@@ -223,7 +341,6 @@ export function getPhaseProgress(completedLessonIds, phaseNum) {
 }
 
 export function getCompletedPhaseIntercept(prevCompletedIds, newCompletedIds) {
-  // Detect if a phase just became fully complete
   for (const p of [1, 2, 3]) {
     const meta = PHASE_META[p];
     const wasDone = meta.lessons.every(l => prevCompletedIds.includes(l.id));
@@ -239,19 +356,18 @@ export function getCompletedPhaseIntercept(prevCompletedIds, newCompletedIds) {
 /* ── Zeigarnik momentum copy ── */
 
 export function getPhaseMomentumCopy(completedLessonIds) {
-  // Find the current active phase (first phase not fully complete)
   for (const p of [1, 2, 3]) {
     const meta = PHASE_META[p];
     const done = meta.lessons.filter(l => completedLessonIds.includes(l.id)).length;
     const total = meta.lessons.length;
 
-    if (done >= total) continue; // Phase complete, check next
+    if (done >= total) continue;
 
     const remaining = total - done;
     const nextPhase = p < 3 ? PHASE_META[p + 1].title : null;
     const phaseName = meta.title;
 
-    if (done === 0) return null; // Haven't started — show nothing
+    if (done === 0) return null;
 
     if (remaining === 1) {
       return {
@@ -280,7 +396,6 @@ export function getPhaseMomentumCopy(completedLessonIds) {
     };
   }
 
-  // All phases done
   return null;
 }
 
@@ -290,13 +405,11 @@ export function isLessonUnlocked(lessonIndex, completedLessonIds) {
   const prev = LESSONS[lessonIndex - 1];
   if (!cur || !prev) return false;
 
-  // Phase 2 requires Phase 1 threshold
   if (cur.phase === 2 && prev.phase === 1) {
     const p1Done = LESSONS.filter(l => l.phase === 1 && completedLessonIds.includes(l.id)).length;
     return p1Done >= PHASE_1_COMPLETION_THRESHOLD;
   }
 
-  // Phase 3 requires Phase 2 threshold
   if (cur.phase === 3 && prev.phase === 2) {
     const p2Done = LESSONS.filter(l => l.phase === 2 && completedLessonIds.includes(l.id)).length;
     return p2Done >= PHASE_2_COMPLETION_THRESHOLD;

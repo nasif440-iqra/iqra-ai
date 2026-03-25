@@ -5,16 +5,42 @@ import { sfxTap, sfxNodeTap, sfxLessonStart } from "../lib/audio.js";
 import { Icons } from "./Icons.jsx";
 import { pickCopy, CONTINUATION_COPY } from "../lib/engagement.js";
 import { getPhaseMomentumCopy, isLessonUnlocked } from "../lib/progress.js";
-import { getCurrentLesson, getLearnedLetterIds, getPhaseCounts, getDailyGoal, getDueLetters } from "../lib/selectors.js";
+import { getCurrentUnlockedLesson, getLearnedLetterIds, getPhaseCounts, getDueLetters, planReviewSession } from "../lib/selectors.js";
 import { getTodayDateString } from "../lib/progress.js";
 
 /* ── serpentine x-offsets that repeat every 6 nodes ── */
 const OFFSETS = [4, 16, 8, -4, -12, 0];
 
-export default function HomeScreen({ progress, completedLessonIds, lessonsCompleted, lastCompletedLesson, onStartLesson, currentWird, todayLessonCount }) {
+function getPersonalizedCopy(onboardingData) {
+  if (!onboardingData) return null;
+  const { onboardingStartingPoint, onboardingMotivation } = onboardingData;
+
+  // Motivation-based copy takes priority if available
+  if (onboardingMotivation) {
+    if (onboardingMotivation.includes("prayer")) return "A few sincere minutes can strengthen your reading and your prayer.";
+    if (onboardingMotivation.includes("reconnect")) return "Returning is a beginning too.";
+    if (onboardingMotivation.includes("habit")) return "Small and steady — that's the path.";
+    if (onboardingMotivation.includes("child") || onboardingMotivation.includes("family")) return "Learning together is a beautiful thing.";
+    if (onboardingMotivation.includes("confidently")) return "Every letter you learn brings you closer.";
+  }
+
+  // Fall back to starting-point copy
+  if (onboardingStartingPoint) {
+    if (onboardingStartingPoint === "I'm completely new") return "Starting from zero is okay. You're building one letter at a time.";
+    if (onboardingStartingPoint.includes("forgot")) return "You're rebuilding, not starting over.";
+    if (onboardingStartingPoint.includes("few letters")) return "You already have a foundation. Let's build on it.";
+    if (onboardingStartingPoint.includes("read a little")) return "Strengthening your basics will make everything easier.";
+  }
+
+  return null;
+}
+
+export default function HomeScreen({ progress, mastery, completedLessonIds, lessonsCompleted, lastCompletedLesson, onStartLesson, currentWird, todayLessonCount, dailyGoal, onboardingData }) {
   const learnedIds = getLearnedLetterIds(completedLessonIds);
-  const dailyGoalNum = getDailyGoal();
-  const dueLetters = getDueLetters(progress, getTodayDateString());
+  const dailyGoalNum = dailyGoal ?? 1;
+  const today = getTodayDateString();
+  const dueLetters = getDueLetters(progress, today);
+  const reviewPlan = mastery ? planReviewSession(mastery, today) : null;
 
   /* ── Zeigarnik momentum copy ── */
   const momentumCopy = getPhaseMomentumCopy(completedLessonIds);
@@ -31,8 +57,8 @@ export default function HomeScreen({ progress, completedLessonIds, lessonsComple
     : learnedIds.length < 10 ? `${learnedIds.length} letters down`
     : `${learnedIds.length} letters and growing`;
 
-  /* ── find the current (next uncompleted) lesson ── */
-  const currentLesson = LESSONS.find(l => !completedLessonIds.includes(l.id)) || LESSONS[LESSONS.length - 1];
+  /* ── find the current (next uncompleted + unlocked) lesson ── */
+  const currentLesson = getCurrentUnlockedLesson(completedLessonIds);
   const currentIdx = LESSONS.findIndex(l => l.id === currentLesson.id);
   const heroLetters = (currentLesson.teachIds || []).map(id => getLetter(id)).filter(Boolean);
   const heroLetter = heroLetters[0];
@@ -77,6 +103,11 @@ export default function HomeScreen({ progress, completedLessonIds, lessonsComple
         <div className="fade-up" style={{ marginBottom: 24 }}>
           <p style={{ fontSize: 11, color: "var(--c-text-muted)", fontWeight: 600, marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.15em" }}>Assalamu Alaikum</p>
           <h2 style={{ fontFamily: "var(--font-heading)", fontSize: 28, fontWeight: 400, lineHeight: 1.15, color: "var(--c-text)", whiteSpace: "pre-line" }}>{greetingSubtitle}</h2>
+          {(() => {
+            const personalCopy = getPersonalizedCopy(onboardingData);
+            if (!personalCopy || lessonsCompleted > 5) return null;
+            return <p style={{ fontSize: 13, color: "var(--c-text-muted)", lineHeight: 1.5, marginTop: 8, fontStyle: "italic" }}>{personalCopy}</p>;
+          })()}
         </div>
 
         {/* ── Hero Card ── */}
@@ -142,33 +173,45 @@ export default function HomeScreen({ progress, completedLessonIds, lessonsComple
           </motion.div>
         )}
 
-        {/* ── Review Card ── */}
-        {dueLetters.length > 0 && (
-          <div className="fade-up" style={{ marginBottom: 20, animationDelay: "0.12s" }}>
-            <div style={{
-              background: "var(--c-bg-card)", borderRadius: 20, padding: "16px 20px",
-              boxShadow: "0 4px 16px rgba(22,51,35,0.04)", border: "1px solid var(--c-border)",
-              display: "flex", alignItems: "center", gap: 16,
-            }}>
-              <span style={{ fontSize: 28, lineHeight: 1 }}>{"\u263D"}</span>
-              <div style={{ flex: 1 }}>
-                <p style={{ fontFamily: "var(--font-heading)", fontSize: 15, fontWeight: 600, color: "var(--c-text)", margin: 0 }}>Review due</p>
-                <p style={{ fontSize: 12, color: "var(--c-text-muted)", margin: "2px 0 0" }}>{dueLetters.length} letter{dueLetters.length !== 1 ? "s" : ""} ready for practice</p>
+        {/* ── Smart Review Card ── */}
+        {(reviewPlan?.hasReviewWork || dueLetters.length > 0) && (() => {
+          const itemCount = reviewPlan?.totalItems || dueLetters.length;
+          const hasWeak = reviewPlan?.weak?.length > 0;
+          const hasConfused = reviewPlan?.confused?.length > 0;
+          const subtitle = hasWeak && hasConfused
+            ? `${itemCount} items — includes weak & confused letters`
+            : hasWeak
+            ? `${itemCount} items — some letters need extra practice`
+            : hasConfused
+            ? `${itemCount} items — practicing tricky pairs`
+            : `${itemCount} letter${itemCount !== 1 ? "s" : ""} ready for practice`;
+          return (
+            <div className="fade-up" style={{ marginBottom: 20, animationDelay: "0.12s" }}>
+              <div style={{
+                background: "var(--c-bg-card)", borderRadius: 20, padding: "16px 20px",
+                boxShadow: "0 4px 16px rgba(22,51,35,0.04)", border: "1px solid var(--c-border)",
+                display: "flex", alignItems: "center", gap: 16,
+              }}>
+                <span style={{ fontSize: 28, lineHeight: 1 }}>{"\u263D"}</span>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontFamily: "var(--font-heading)", fontSize: 15, fontWeight: 600, color: "var(--c-text)", margin: 0 }}>Review due</p>
+                  <p style={{ fontSize: 12, color: "var(--c-text-muted)", margin: "2px 0 0" }}>{subtitle}</p>
+                </div>
+                <button
+                  onClick={() => { sfxNodeTap(); onStartLesson("review"); }}
+                  style={{
+                    background: "transparent", color: "var(--c-primary)",
+                    borderRadius: 12, padding: "10px 16px", border: "1.5px solid var(--c-primary)",
+                    fontFamily: "var(--font-body)", fontSize: 13, fontWeight: 600,
+                    cursor: "pointer", transition: "all 0.2s", whiteSpace: "nowrap",
+                  }}
+                >
+                  Start review →
+                </button>
               </div>
-              <button
-                onClick={() => { sfxNodeTap(); onStartLesson("review"); }}
-                style={{
-                  background: "transparent", color: "var(--c-primary)",
-                  borderRadius: 12, padding: "10px 16px", border: "1.5px solid var(--c-primary)",
-                  fontFamily: "var(--font-body)", fontSize: 13, fontWeight: 600,
-                  cursor: "pointer", transition: "all 0.2s", whiteSpace: "nowrap",
-                }}
-              >
-                Start review →
-              </button>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* ── Momentum copy (Zeigarnik) ── */}
         {momentumCopy && (

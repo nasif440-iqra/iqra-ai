@@ -47,7 +47,7 @@ async function fetchTtsAudio(normalizedText) {
         return null;
       }
 
-      if (attempt > 1) console.log("[TTS] retry succeeded");
+
       return URL.createObjectURL(blob);
     } catch (err) {
       // Network error (offline, DNS, timeout) — retry once
@@ -90,10 +90,7 @@ export async function playGeneratedArabicAudio(text) {
   try {
     let blobUrl = audioCache.get(normalizedText);
 
-    if (blobUrl) {
-      console.log("[TTS] cache hit:", JSON.stringify(normalizedText));
-    } else {
-      console.log("[TTS] fetching:", JSON.stringify(normalizedText));
+    if (!blobUrl) {
       blobUrl = await fetchTtsAudio(normalizedText);
       if (!blobUrl) return false;
       audioCache.set(normalizedText, blobUrl);

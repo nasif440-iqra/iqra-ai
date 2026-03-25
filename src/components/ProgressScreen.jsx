@@ -1,10 +1,12 @@
 import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { ARABIC_LETTERS, getLetter } from "../data/letters.js";
 import { LESSONS } from "../data/lessons.js";
 import { Icons } from "./Icons.jsx";
-import { sfxTap } from "../lib/audio.js";
-import { resetProgress } from "../lib/progress.js";
+import { sfxTap, playLetterAudio } from "../lib/audio.js";
+import { resetProgress, exportProgressJSON, importProgressJSON } from "../lib/progress.js";
 import { getCurrentLesson, getLearnedLetterIds } from "../lib/selectors.js";
+import { PronunciationCard } from "./PronunciationGuide.jsx";
 
 /* ── Phase grouping definitions ──────────────────────────────────────────── */
 const PHASE_GROUPS = [
@@ -49,6 +51,8 @@ export default function ProgressScreen({
 }) {
   const learnedIds = getLearnedLetterIds(completedLessonIds);
   const currentLesson = getCurrentLesson(completedLessonIds);
+  const [selectedLetterId, setSelectedLetterId] = useState(null);
+  const selectedLetter = selectedLetterId ? getLetter(selectedLetterId) : null;
 
   // Build phase data
   const phases = PHASE_GROUPS.map((group) => {
@@ -498,21 +502,34 @@ export default function ProgressScreen({
             const p = progress[l.id] || { correct: 0, attempts: 0 };
             const learned = learnedIds.includes(l.id);
             const started = p.attempts > 0;
+            const isSelected = selectedLetterId === l.id;
             return (
               <div
                 key={l.id}
                 className="card fade-up"
+                onClick={() => {
+                  if (learned) {
+                    sfxTap();
+                    setSelectedLetterId(isSelected ? null : l.id);
+                  }
+                }}
                 style={{
                   textAlign: "center",
                   padding: "8px 4px",
                   animationDelay: `${0.15 + i * 0.015}s`,
-                  border: learned
+                  border: isSelected
+                    ? "2px solid var(--c-accent)"
+                    : learned
                     ? "2px solid var(--c-primary)"
                     : "2px solid transparent",
-                  background: learned
+                  background: isSelected
+                    ? "var(--c-accent-light)"
+                    : learned
                     ? "var(--c-primary-soft)"
                     : "var(--c-bg-card)",
                   opacity: started || learned ? 1 : 0.3,
+                  cursor: learned ? "pointer" : "default",
+                  transition: "border-color 0.2s, background 0.2s",
                 }}
               >
                 <span
@@ -549,20 +566,130 @@ export default function ProgressScreen({
           })}
         </div>
 
-        {/* ── Reset Progress (testing) ── */}
+        {/* ── Letter Detail Panel ── */}
+        <AnimatePresence>
+          {selectedLetter && (
+            <motion.div
+              key={selectedLetter.id}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+              style={{ marginTop: 16 }}
+            >
+              <div style={{
+                background: "var(--c-bg-card)", borderRadius: 20, padding: 20,
+                border: "1px solid var(--c-border)", boxShadow: "var(--shadow-soft)",
+              }}>
+                {/* Letter header */}
+                <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 14 }}>
+                  <div style={{
+                    width: 56, height: 56, borderRadius: "50%", background: "var(--c-primary-soft)",
+                    border: "2px solid var(--c-primary)", display: "flex", alignItems: "center", justifyContent: "center",
+                  }}>
+                    <span style={{ fontFamily: "var(--font-arabic)", fontSize: 32, color: "var(--c-primary-dark)", lineHeight: 1, marginTop: 4 }} dir="rtl">{selectedLetter.letter}</span>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: "var(--c-text)" }}>{selectedLetter.name}</div>
+                    <div style={{ fontSize: 12, color: "var(--c-accent)", fontWeight: 600 }}>"{selectedLetter.transliteration}" — {selectedLetter.soundHint}</div>
+                  </div>
+                  <button onClick={() => playLetterAudio(selectedLetter.id, "sound")} style={{ background: "none", border: "2px solid var(--c-accent)", borderRadius: "50%", width: 40, height: 40, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <Icons.Volume size={18} color="var(--c-accent)" />
+                  </button>
+                </div>
+
+                {/* Tip */}
+                <p style={{ fontSize: 13, color: "var(--c-text-soft)", lineHeight: 1.5, marginBottom: 12 }}>{selectedLetter.tip}</p>
+
+                {/* Stats */}
+                {progress[selectedLetter.id] && progress[selectedLetter.id].attempts > 0 && (
+                  <div style={{ display: "flex", gap: 12, marginBottom: 14 }}>
+                    <div style={{ fontSize: 11, color: "var(--c-text-muted)" }}>
+                      <span style={{ fontWeight: 700, color: "var(--c-primary)" }}>{progress[selectedLetter.id].correct}</span>/{progress[selectedLetter.id].attempts} correct
+                    </div>
+                    <div style={{ fontSize: 11, color: "var(--c-text-muted)" }}>
+                      {Math.round((progress[selectedLetter.id].correct / progress[selectedLetter.id].attempts) * 100)}% accuracy
+                    </div>
+                  </div>
+                )}
+
+                {/* Pronunciation guide if available */}
+                {selectedLetter.articulation && (
+                  <PronunciationCard letter={selectedLetter} audioType="sound" defaultOpen={true} />
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ── Data Management ── */}
+        <h3
+          className="fade-up"
+          style={{
+            fontFamily: "var(--font-heading)",
+            fontSize: 16,
+            fontWeight: 600,
+            marginTop: 32,
+            marginBottom: 14,
+          }}
+        >
+          Your Data
+        </h3>
         <div
           className="fade-up"
           style={{
-            marginTop: 40,
-            textAlign: "center",
+            display: "flex",
+            flexDirection: "column",
+            gap: 10,
             animationDelay: "0.5s",
           }}
         >
           <button
             onClick={() => {
-              if (window.confirm("Are you sure you want to reset all progress? This cannot be undone.")) {
-                resetProgress();
-              }
+              const json = exportProgressJSON();
+              const blob = new Blob([json], { type: "application/json" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `iqra-backup-${new Date().toISOString().slice(0, 10)}.json`;
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+            style={{
+              background: "none",
+              border: "1.5px solid var(--c-primary)",
+              borderRadius: 10,
+              padding: "10px 20px",
+              fontSize: 13,
+              fontWeight: 600,
+              color: "var(--c-primary)",
+              cursor: "pointer",
+              fontFamily: "var(--font-heading)",
+            }}
+          >
+            Export Backup
+          </button>
+          <button
+            onClick={() => {
+              const input = document.createElement("input");
+              input.type = "file";
+              input.accept = ".json";
+              input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                  const ok = importProgressJSON(ev.target.result);
+                  if (ok) {
+                    window.alert("Backup restored successfully. The app will reload.");
+                    location.reload();
+                  } else {
+                    window.alert("Invalid backup file. Please try again.");
+                  }
+                };
+                reader.readAsText(file);
+              };
+              input.click();
             }}
             style={{
               background: "none",
@@ -574,6 +701,27 @@ export default function ProgressScreen({
               color: "var(--c-text-muted)",
               cursor: "pointer",
               fontFamily: "var(--font-heading)",
+            }}
+          >
+            Restore Backup
+          </button>
+          <button
+            onClick={() => {
+              if (window.confirm("Are you sure you want to reset all progress? This cannot be undone.")) {
+                resetProgress();
+              }
+            }}
+            style={{
+              background: "none",
+              border: "1.5px solid var(--c-danger-light)",
+              borderRadius: 10,
+              padding: "10px 20px",
+              fontSize: 13,
+              fontWeight: 600,
+              color: "var(--c-text-muted)",
+              cursor: "pointer",
+              fontFamily: "var(--font-heading)",
+              marginTop: 8,
             }}
           >
             Reset Progress

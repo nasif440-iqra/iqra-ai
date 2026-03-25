@@ -98,8 +98,10 @@ export const COMPLETION_HEADLINES = {
   perfect: "Flawless.",
   great: "Well done.",
   good: "Solid effort.",
+  struggling: "Keep going.",
   harakatPerfect: "Every sound, correct.",
   harakatGreat: "Reading with clarity.",
+  harakatStruggling: "The sounds take time.",
 };
 
 export const COMPLETION_SUBLINES = {
@@ -107,8 +109,10 @@ export const COMPLETION_SUBLINES = {
   perfect: "Every answer was precise. That's real learning.",
   great: "Strong understanding. The letters are becoming clear.",
   good: "Each attempt sharpens your recognition. Keep going.",
+  struggling: "Every practice session builds familiarity. You'll get there.",
   harakatPerfect: "You matched every mark to its sound.",
   harakatGreat: "The vowels are starting to feel natural.",
+  harakatStruggling: "Vowel marks take repetition — keep listening.",
 };
 
 // ─── Continuation / unlock copy ─────────────────────────────────────────────
@@ -160,33 +164,83 @@ export function getCorrectPool(isHarakat, isSound) {
  */
 export function getCompletionTier(accuracy, isFirst, isHarakat) {
   if (isFirst) return "firstLesson";
-  if (isHarakat) return accuracy === 100 ? "harakatPerfect" : "harakatGreat";
+  if (isHarakat) return accuracy === 100 ? "harakatPerfect" : accuracy >= 50 ? "harakatGreat" : "harakatStruggling";
   if (accuracy === 100) return "perfect";
-  if (accuracy >= 70) return "great";
-  return "good";
+  if (accuracy >= 80) return "great";
+  if (accuracy >= 50) return "good";
+  return "struggling";
+}
+
+// ─── Performance band system ──────────────────────────────────────────────
+
+/**
+ * Classify lesson performance into a band for honest summary messaging.
+ * Returns "strong" | "partial" | "weak"
+ */
+export function getPerformanceBand(accuracy) {
+  if (accuracy >= 80) return "strong";
+  if (accuracy >= 50) return "partial";
+  return "weak";
+}
+
+/**
+ * Get honest summary section heading + recap text based on performance.
+ */
+export function getSummaryMessaging(lesson, teachLetters, lessonCombos, accuracy) {
+  const band = getPerformanceBand(accuracy);
+  const mode = lesson.lessonMode;
+
+  // Section heading
+  const sectionHeading = band === "strong" ? "What you learned"
+    : band === "partial" ? "What you practiced"
+    : "Keep reviewing";
+
+  // Recap text — honest about performance
+  let recap;
+  if (mode === "harakat-intro") {
+    recap = band === "strong"
+      ? "You learned the three short vowel marks — Fatha, Kasra, and Damma."
+      : band === "partial"
+      ? "You practiced the three vowel marks — they'll become clearer with repetition."
+      : "You started learning Fatha, Kasra, and Damma — keep practicing to build familiarity.";
+  } else if (mode === "harakat" || mode === "harakat-mixed") {
+    const sounds = lessonCombos.slice(0, 4).map(c => `"${c.sound}"`).join(", ");
+    recap = band === "strong"
+      ? `You practiced reading: ${sounds}`
+      : band === "partial"
+      ? `You're getting familiar with: ${sounds}`
+      : `You started practicing: ${sounds} — revisit to build confidence.`;
+  } else if (mode === "contrast") {
+    const names = teachLetters.map(l => l.name).join(" and ");
+    recap = band === "strong"
+      ? `You learned to distinguish ${names} by sound.`
+      : band === "partial"
+      ? `You're improving at telling ${names} apart.`
+      : `You began practicing ${names} — the difference will click with more practice.`;
+  } else if (mode === "sound") {
+    const names = teachLetters.map(l => l.name).join(", ");
+    recap = band === "strong"
+      ? `You connected ${names} to ${teachLetters.length === 1 ? "its" : "their"} sound${teachLetters.length > 1 ? "s" : ""}.`
+      : band === "partial"
+      ? `You're getting familiar with how ${names} sound${teachLetters.length > 1 ? "" : "s"}.`
+      : `You started hearing ${names} — keep listening to build recognition.`;
+  } else {
+    // recognition
+    const names = teachLetters.map(l => l.name).join(", ");
+    recap = band === "strong"
+      ? `You learned to recognize ${names}.`
+      : band === "partial"
+      ? `You're improving at recognizing ${names}.`
+      : `You've begun practicing ${names} — review again to strengthen recognition.`;
+  }
+
+  return { sectionHeading, recap, band };
 }
 
 /**
  * Get the recap text summarizing what was learned in this lesson.
+ * @deprecated Use getSummaryMessaging() for performance-honest recaps.
  */
 export function getLessonRecap(lesson, teachLetters, lessonCombos) {
-  const mode = lesson.lessonMode;
-  if (mode === "harakat-intro") {
-    return "You learned the three short vowel marks — Fatha, Kasra, and Damma.";
-  }
-  if (mode === "harakat" || mode === "harakat-mixed") {
-    const sounds = lessonCombos.slice(0, 4).map(c => `"${c.sound}"`).join(", ");
-    return `You practiced reading: ${sounds}`;
-  }
-  if (mode === "contrast") {
-    const names = teachLetters.map(l => l.name).join(" and ");
-    return `You learned to distinguish ${names} by sound.`;
-  }
-  if (mode === "sound") {
-    const names = teachLetters.map(l => l.name).join(", ");
-    return `You connected ${names} to ${teachLetters.length === 1 ? "its" : "their"} sound${teachLetters.length > 1 ? "s" : ""}.`;
-  }
-  // recognition
-  const names = teachLetters.map(l => l.name).join(", ");
-  return `You learned to recognize ${names}.`;
+  return getSummaryMessaging(lesson, teachLetters, lessonCombos, 100).recap;
 }
