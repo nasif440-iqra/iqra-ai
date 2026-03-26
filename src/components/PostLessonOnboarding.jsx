@@ -244,22 +244,15 @@ export default function PostLessonOnboarding({ onComplete }) {
               </div>
             </motion.div>
 
-            {/* Headline — word-by-word, full shimmer */}
-            <h1 style={styles.confirmHeadline}>
-              <span className="shimmer-text" style={{ fontFamily: "var(--font-heading)" }}>
-                {["Your", "journey", "has", "started."].map((word, i) => (
-                  <motion.span
-                    key={word}
-                    style={{ display: "inline-block", marginRight: "0.3em" }}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.8 + i * 0.15, duration: 0.4, ease: [0, 0, 0.2, 1] }}
-                  >
-                    {word}
-                  </motion.span>
-                ))}
-              </span>
-            </h1>
+            {/* Headline */}
+            <motion.h1
+              style={styles.confirmHeadline}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            >
+              Your journey has started.
+            </motion.h1>
 
             {/* Subtext */}
             <motion.p
