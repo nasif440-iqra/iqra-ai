@@ -1,4 +1,4 @@
-// Tiny Express server for Iqra AI
+// Tiny Express server for Tila
 // Provides /api/tts endpoint that calls Google Cloud Text-to-Speech.
 // Secrets stay server-side — the frontend never touches Google credentials.
 //
@@ -7,6 +7,7 @@
 
 import "dotenv/config";
 import express from "express";
+import rateLimit from "express-rate-limit";
 import path from "path";
 import fs from "fs";
 import crypto from "crypto";
@@ -157,10 +158,27 @@ async function initTTS() {
   }
 }
 
+// --- Security headers ---
+app.use((req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  next();
+});
+
+// --- TTS rate limiter ---
+const ttsLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many TTS requests. Please try again shortly." },
+});
+
 // --- TTS endpoint ---
 // GET /api/tts?text=بَ
 // Returns MP3 audio for the given Arabic text.
-app.get("/api/tts", async (req, res) => {
+app.get("/api/tts", ttsLimiter, async (req, res) => {
   const rawText = req.query.text;
   const text = typeof rawText === "string"
     ? rawText.normalize("NFC").trim().replace(/\s+/g, " ")
@@ -186,7 +204,12 @@ app.get("/api/tts", async (req, res) => {
     console.log(`[TTS] cache HIT: "${text}" → ${path.basename(cachePath)} (${stat.size} bytes)`);
     res.setHeader("Content-Type", "audio/mpeg");
     res.setHeader("Cache-Control", "no-store");
-    return fs.createReadStream(cachePath).pipe(res);
+    const stream = fs.createReadStream(cachePath);
+    stream.on("error", (err) => {
+      console.error("[TTS] cache read error:", err.message);
+      if (!res.headersSent) res.status(500).json({ error: "Failed to read cached audio." });
+    });
+    return stream.pipe(res);
   }
 
   // Initialize TTS client if needed
@@ -232,7 +255,7 @@ app.get("/api/tts", async (req, res) => {
     res.send(audioBuffer);
   } catch (err) {
     console.error(`[TTS] Google Cloud TTS error for "${text}":`, err);
-    res.status(500).json({ error: "TTS generation failed", detail: String(err?.message || err) });
+    res.status(500).json({ error: "TTS generation failed. Please try again." });
   }
 });
 

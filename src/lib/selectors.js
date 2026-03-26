@@ -156,30 +156,33 @@ export function planReviewSession(mastery, today, { maxItems = 12 } = {}) {
 }
 
 /**
- * Extract supported numeric letter IDs from a review plan's entity keys.
- * Filters out combo/unknown entities that review question generation can't handle.
- * Returns deduplicated numeric IDs.
+ * Extract review items from entity keys, split by type.
+ * Returns { letterIds: number[], comboIds: string[] }
  */
-export function getSupportedReviewLetterIds(entityKeys) {
-  const ids = new Set();
+export function extractReviewItems(entityKeys) {
+  const letterIds = new Set();
+  const comboIds = new Set();
   for (const key of entityKeys) {
     const parsed = parseEntityKey(key);
     if (parsed.type === "letter" && typeof parsed.rawId === "number" && !isNaN(parsed.rawId)) {
-      ids.add(parsed.rawId);
+      letterIds.add(parsed.rawId);
+    } else if (parsed.type === "combo" && typeof parsed.rawId === "string") {
+      comboIds.add(parsed.rawId);
     }
   }
-  return [...ids];
+  return { letterIds: [...letterIds], comboIds: [...comboIds] };
 }
 
 /**
  * Build a safe lesson override object for a review session.
- * Validates that there are supported items; returns null if review can't proceed.
+ * Supports both letter and combo entities.
+ * Returns null only when nothing is truly reviewable.
  */
 export function buildReviewLessonPayload(mastery, completedLessonIds, today) {
   const plan = planReviewSession(mastery, today);
-  const letterIds = getSupportedReviewLetterIds(plan.items);
+  const { letterIds, comboIds } = extractReviewItems(plan.items);
 
-  // Fallback: if planner returned no supported letters, try legacy due letters
+  // Fallback: if planner returned no letters, try legacy due letters
   if (letterIds.length === 0) {
     const legacyEntries = {};
     for (const [key, val] of Object.entries(mastery.entities || {})) {
@@ -194,16 +197,19 @@ export function buildReviewLessonPayload(mastery, completedLessonIds, today) {
     }
   }
 
-  if (letterIds.length === 0) return null;
+  // Return null only when truly nothing is reviewable
+  if (letterIds.length === 0 && comboIds.length === 0) return null;
 
+  const totalItems = letterIds.length + comboIds.length;
   return {
     id: "review",
     phase: getCurrentPhase(completedLessonIds),
     lessonMode: "review",
     title: "Review Session",
-    description: `${letterIds.length} letter${letterIds.length !== 1 ? "s" : ""} to practice`,
+    description: `${totalItems} item${totalItems !== 1 ? "s" : ""} to practice`,
     teachIds: letterIds,
+    teachCombos: comboIds.length > 0 ? comboIds : undefined,
     reviewIds: [],
-    familyRule: "Practice the letters you've already learned.",
+    familyRule: "Practice what you've already learned.",
   };
 }

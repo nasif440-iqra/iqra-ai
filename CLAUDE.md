@@ -1,4 +1,4 @@
-# Iqra AI
+# Tila
 
 A free, progressive, game-based web app teaching users to read the Quran in Arabic. Targets learners of all ages — especially non-native speakers beginning Quranic education. Bite-sized ~2-minute lessons with structured progression, audio pronunciation, adaptive feedback, spaced repetition, and pronunciation guidance for difficult Arabic sounds.
 
@@ -10,7 +10,7 @@ A free, progressive, game-based web app teaching users to read the Quran in Arab
 - **Audio**: Web Audio API (SFX) + pre-recorded WAV files + Google Cloud TTS (MP3)
 - **Styling**: Vanilla CSS with custom properties (tokens.css) + inline styles for dynamic values
 - **Persistence**: Browser localStorage only — no database, no auth. Export/import backup supported.
-- **Testing**: Vitest 4.1 + jsdom (145 tests across 5 files)
+- **Testing**: Vitest 4.1 + jsdom (274 tests across 8 files)
 - **PWA**: Service worker + manifest for offline support and Add to Home Screen
 - **Fonts**: Amiri / Traditional Arabic (Arabic serif) + Inter (English body) + Lora (English headings)
 
@@ -34,6 +34,7 @@ src/
     ProgressScreen.jsx           — Letter mastery grid, phase progress, data export/import
     PhaseCompleteScreen.jsx      — Phase unlock celebration
     ReturnHadithScreen.jsx       — Return-user motivational interstitial (hadith + floating letters)
+    WirdIntroduction.jsx         — Post-first-lesson Wird streak introduction (animated, multi-phase)
     PronunciationGuide.jsx       — Pronunciation popup modals (single letter + comparison)
     Icons.jsx                    — SVG icon components
     lesson/
@@ -47,7 +48,7 @@ src/
       StreakBanner.jsx            — Animated streak counter display
       useLessonQuiz.js           — Quiz state machine & progression logic (hook)
   data/
-    lessons.js                   — 84 lesson definitions (3 phases, ~10 modules)
+    lessons.js                   — 85 lesson definitions (3 phases, ~11 modules)
     letters.js                   — 28 Arabic letters with metadata + articulation data (13 letters)
     harakat.js                   — 3 vowel marks + dynamic letter-vowel combo generation
   lib/
@@ -57,6 +58,8 @@ src/
     audio.js                     — Web Audio API SFX engine + letter audio playback + preloading
     tts.js                       — Google Cloud TTS client (frontend, with retry + caching)
     engagement.js                — Microcopy pools, performance bands, summary messaging
+    outcome.js                   — Lesson outcome evaluation (pass/fail, accuracy threshold)
+    routing.js                   — Hash-based route parsing, serialization, screen classification
     features.js                  — Feature flags (speakingPractice: false)
     motion.js                    — Animation presets (springs, easings, duration tokens)
     dateUtils.js                 — Shared date utilities (getTodayDateString, getDayDifference, addDateDays)
@@ -71,7 +74,7 @@ src/
       shared.js                  — Utility functions (shuffle, pickRandom, distractor selection, confusion map)
       explanations.js            — Wrong-answer feedback with contextual explanations
   hooks/
-    useIqraAppState.js           — Central app state hook (progress, mastery, habit, onboarding, saveFailed)
+    useTilaAppState.js           — Central app state hook (progress, mastery, habit, onboarding, saveFailed)
   styles/
     index.css                    — Master CSS import
     tokens.css                   — Color, typography, spacing, shadow variables
@@ -102,24 +105,25 @@ index.html                       — Entry HTML with PWA meta tags, font loading
 Hash-based routing for browser back button support. Screens managed via `useState` in `App.jsx` with `pushState`/`popstate` listeners. Safe back-navigation to home/progress/lesson; transient screens (phaseComplete, postLessonOnboarding) redirect to home on back.
 
 ```
-Onboarding (8 steps) -> Lesson 1 -> PostLessonOnboarding (3 steps) -> HomeScreen
+Onboarding (8 steps) -> Lesson 1 -> PostLessonOnboarding (3 steps) -> WirdIntroduction -> HomeScreen
 HomeScreen <-> ProgressScreen (bottom nav tabs)
 HomeScreen -> LessonScreen (intro -> quiz -> [midCelebrate] -> summary) -> HomeScreen
 HomeScreen -> Review Session -> HomeScreen
+WirdIntroduction (shown once after first lesson, introduces Wird streak concept)
 ReturnHadithScreen (shown on return after 1+ day gap, once per day)
 PhaseCompleteScreen (shown when all lessons in a phase are completed)
 ```
 
-### Learning Phases (84 lessons total)
+### Learning Phases (85 lessons total)
 1. **Phase 1 — Letter Recognition** (43 lessons, modules 1.1-1.6): Visually identify all 28 Arabic letters by shape. Grouped by visual families (same base shape, different dots). Includes a Phase 1 checkpoint.
-2. **Phase 2 — Letter Sounds** (23 lessons, modules 2.1-2.10): 13 sound lessons (audio-to-letter, letter-to-sound) + 9 contrast lessons (confusable pairs like Seen/Saad, Haa/Ha, Ta/Taa, Dhaal/Tha) + 1 checkpoint. Unlocks after 15 Phase 1 lessons completed.
+2. **Phase 2 — Letter Sounds** (24 lessons, modules 2.1-2.11): 13 sound lessons (audio-to-letter, letter-to-sound) + 1 sound review checkpoint + 9 contrast lessons (confusable pairs like Seen/Saad, Haa/Ha, Ta/Taa, Dhaal/Tha) + 1 letter sound mastery checkpoint. Unlocks after 15 Phase 1 lessons completed.
 3. **Phase 3 — Harakat / Short Vowels** (18 lessons, modules 3.1-3.6): Fatha, Kasra, Damma vowel marks applied to all 28 letters. Builds from single vowels on Ba/Ta/Tha to mixed harakat on all letters. Unlocks after 12 Phase 2 lessons completed.
 
 ### Lesson IDs
-Lesson IDs are not sequential — id:84 exists between id:63 and id:64 (inserted contrast lesson). Array position in `LESSONS` determines order, not ID value. Tests derive counts from the LESSONS array, not hardcoded numbers.
+Lesson IDs are not sequential — id:84 and id:85 exist out of numeric order. Array position in `LESSONS` determines order, not ID value. Tests derive counts from the LESSONS array, not hardcoded numbers.
 
 ### State Management
-Single `useIqraAppState` hook manages all global state via `useState` (initialized lazily from localStorage). Progress persisted to localStorage on every state change via `useEffect`. `saveFailed` flag surfaces localStorage exhaustion as a user-visible warning banner.
+Single `useTilaAppState` hook manages all global state via `useState` (initialized lazily from localStorage). Progress persisted to localStorage on every state change via `useEffect`. `saveFailed` flag surfaces localStorage exhaustion as a user-visible warning banner.
 
 Key state shape:
 - `completedLessonIds: number[]` — completed lesson IDs (sorted, deduplicated, validated)
@@ -179,7 +183,7 @@ Distractors are pedagogically meaningful: visual family members for recognition,
 
 ### PWA
 - `manifest.json`: standalone display, portrait orientation, theme color #163323.
-- `sw.js`: Cache-first for audio files (WAV/MP3). Network-first with cache fallback for app shell. Network-only for `/api/*` (TTS must be fresh). Cache name versioned (`iqra-v1`).
+- `sw.js`: Cache-first for audio files (WAV/MP3). Network-first with cache fallback for app shell. Network-only for `/api/*` (TTS must be fresh). Cache name versioned (`tila-v1`).
 - Icons expected at `/icons/icon-192.png` and `/icons/icon-512.png` (not yet created).
 
 ## Design Tokens
@@ -229,18 +233,18 @@ Distractors are pedagogically meaningful: visual family members for recognition,
 
 Unlock all Phase 1 + Phase 2 lessons (paste in DevTools console):
 ```js
-let p = JSON.parse(localStorage.getItem("iqra_progress"));
-p.lessonCompletion.completedLessonIds = Array.from({length: 65}, (_, i) => i + 1).concat([84]);
+let p = JSON.parse(localStorage.getItem("tila_progress"));
+p.lessonCompletion.completedLessonIds = Array.from({length: 65}, (_, i) => i + 1).concat([84, 85]);
 p.onboarded = true;
 p.onboardingCommitmentComplete = true;
 p.onboardingVersion = 2;
-localStorage.setItem("iqra_progress", JSON.stringify(p));
+localStorage.setItem("tila_progress", JSON.stringify(p));
 location.reload();
 ```
 
 Reset all progress:
 ```js
-localStorage.removeItem("iqra_progress");
+localStorage.removeItem("tila_progress");
 localStorage.removeItem("hasCompletedOnboarding");
 localStorage.removeItem("lastHadithInterstitialDate");
 location.reload();

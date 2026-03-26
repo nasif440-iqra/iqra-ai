@@ -1,7 +1,8 @@
 import { useState, useCallback, useRef, useEffect } from "react";
-import useIqraAppState from "./hooks/useIqraAppState.js";
+import useTilaAppState from "./hooks/useTilaAppState.js";
 import OnboardingScreen from "./components/OnboardingScreen.jsx";
 import PostLessonOnboarding from "./components/PostLessonOnboarding.jsx";
+import WirdIntroduction from "./components/WirdIntroduction.jsx";
 import HomeScreen from "./components/HomeScreen.jsx";
 import LessonScreen from "./components/lesson/LessonScreen.jsx";
 import LessonErrorBoundary from "./components/lesson/LessonErrorBoundary.jsx";
@@ -12,6 +13,7 @@ import { Icons } from "./components/Icons.jsx";
 import { getDailyGoal, buildReviewLessonPayload } from "./lib/selectors.js";
 import { getTodayDateString } from "./lib/progress.js";
 import { unlockAudio, preloadAudio, sfxTransition } from "./lib/audio.js";
+import { parseRoute, serializeRoute, isTransientScreen } from "./lib/routing.js";
 
 export default function App() {
   const {
@@ -30,25 +32,51 @@ export default function App() {
     handlePhaseCompleteContinue: onPhaseCompleteContinue,
     handleDismissHadith: onDismissHadith,
     handleOnboardingComplete: onOnboardingComplete,
+    handleWirdIntroComplete: onWirdIntroComplete,
     handlePostLessonOnboardingComplete: onPostLessonComplete,
-  } = useIqraAppState();
+  } = useTilaAppState();
 
-  const [screen, setScreenRaw] = useState(initialScreen);
-  const [currentLessonId, setCurrentLessonId] = useState(null);
+  // ── Route state ──
+  // Parse initial hash to restore lesson context on refresh
+  const [screen, setScreenRaw] = useState(() => {
+    if (initialScreen === "returnHadith") return "returnHadith";
+    const hashRoute = parseRoute(window.location.hash);
+    return hashRoute.screen;
+  });
+  const [currentLessonId, setCurrentLessonId] = useState(() => {
+    const hashRoute = parseRoute(window.location.hash);
+    return hashRoute.lessonId || null;
+  });
+  // Key to force LessonScreen remount on retry
+  const [lessonKey, setLessonKey] = useState(0);
+  const [isRetry, setIsRetry] = useState(false);
 
   // Derive activeTab from screen — eliminates desync risk
   const activeTab = screen === "progress" ? "progress" : "home";
 
-  // ── Hash-based routing for browser back button ──
+  // ── Hash-based routing (Fix 3) ──
   const suppressHashSync = useRef(false);
 
-  // Push hash when screen changes
+  // Push hash when screen/lessonId changes — skip for transient screens
   useEffect(() => {
     if (suppressHashSync.current) {
       suppressHashSync.current = false;
       return;
     }
-    const hash = screen === "home" ? "" : screen;
+    // Transient screens: replace the current hash with home so browser-back
+    // goes to home instead of re-entering a completed lesson.
+    if (isTransientScreen(screen)) {
+      const current = window.location.hash.replace("#", "");
+      if (current) {
+        window.history.replaceState(null, "", window.location.pathname);
+      }
+      return;
+    }
+
+    const route = screen === "lesson" && currentLessonId != null
+      ? { screen: "lesson", lessonId: currentLessonId }
+      : { screen };
+    const hash = serializeRoute(route);
     const current = window.location.hash.replace("#", "");
     if (current !== hash) {
       if (hash) {
@@ -57,29 +85,27 @@ export default function App() {
         window.history.pushState(null, "", window.location.pathname);
       }
     }
-  }, [screen]);
+  }, [screen, currentLessonId]);
 
-  // Listen for browser back/forward
+  // Listen for browser back/forward — restore from hash
   useEffect(() => {
     const onPopState = () => {
-      const hash = window.location.hash.replace("#", "") || "home";
-      // Only navigate to safe screens on back — don't re-enter transient states
-      const safeScreens = ["home", "progress", "lesson"];
-      if (safeScreens.includes(hash)) {
-        suppressHashSync.current = true;
-        setScreenRaw(hash);
+      const route = parseRoute(window.location.hash);
+      suppressHashSync.current = true;
+
+      if (route.screen === "lesson" && route.lessonId) {
+        setCurrentLessonId(route.lessonId);
+        setLessonKey(k => k + 1); // fresh lesson state on back-nav
+        setScreenRaw("lesson");
+      } else if (route.screen === "progress") {
+        setScreenRaw("progress");
       } else {
-        // For any other hash (phaseComplete, postLessonOnboarding, etc.), go home
-        suppressHashSync.current = true;
         setScreenRaw("home");
       }
     };
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
   }, []);
-
-  // Wrapper: all screen changes go through this
-  const setScreen = useCallback((s) => setScreenRaw(s), []);
 
   const hasUnlocked = useRef(false);
   const handleFirstTouch = () => {
@@ -99,44 +125,83 @@ export default function App() {
   const handleStartLesson1FromOnboarding = useCallback(() => {
     sfxTransition();
     setCurrentLessonId(1);
-    setScreen("lesson");
+    setLessonKey(k => k + 1);
+    setScreenRaw("lesson");
   }, []);
+
+  // Wird introduction complete: mark seen, then go home
+  const handleWirdIntroComplete = useCallback(() => {
+    onWirdIntroComplete();
+    sfxTransition();
+    setScreenRaw("home");
+  }, [onWirdIntroComplete]);
 
   // Post-lesson onboarding complete
   const handlePostLessonComplete = useCallback(({ motivation, dailyGoal }) => {
     onPostLessonComplete({ motivation, dailyGoal });
     sfxTransition();
-    setScreen("home");
+    setScreenRaw("home");
   }, [onPostLessonComplete]);
 
-  const handleStartLesson = useCallback((id) => { sfxTransition(); setCurrentLessonId(id); setScreen("lesson"); }, []);
-  const handleGoHome = useCallback(() => { sfxTransition(); setScreen("home"); }, []);
+  const handleStartLesson = useCallback((id) => {
+    sfxTransition();
+    setCurrentLessonId(id);
+    setIsRetry(false);
+    setLessonKey(k => k + 1);
+    setScreenRaw("lesson");
+  }, []);
 
+  const handleGoHome = useCallback(() => {
+    sfxTransition();
+    setScreenRaw("home");
+  }, []);
+
+  // ── Lesson completion (Fix 1: pass/fail gating) ──
   const handleLessonComplete = useCallback((lessonId, quizResults, speakResults) => {
-    const hasPhaseIntercept = onLessonComplete(lessonId, quizResults, speakResults);
+    const result = onLessonComplete(lessonId, quizResults, speakResults);
 
-    // After completing Lesson 1 for the first time, route to post-lesson onboarding
-    // if commitment flow hasn't been completed yet
-    if (lessonId === 1 && !onboardingData.onboardingCommitmentComplete) {
-      setScreen("postLessonOnboarding");
+    if (!result.passed) {
+      // Failed — mastery was recorded but lesson NOT completed.
+      // Navigate home; user can retry from there.
+      setScreenRaw("home");
       return;
     }
 
-    if (hasPhaseIntercept) {
-      setScreen("phaseComplete");
-    } else {
-      setScreen("home");
+    // Passed — navigate to the appropriate next screen
+    if (lessonId === 1 && !onboardingData.onboardingCommitmentComplete) {
+      setScreenRaw("postLessonOnboarding");
+      return;
     }
-  }, [onLessonComplete, onboardingData.onboardingCommitmentComplete]);
+
+    if (onboardingData.onboardingCommitmentComplete && !onboardingData.wirdIntroSeen) {
+      setScreenRaw("wirdIntroduction");
+      return;
+    }
+
+    if (result.phaseIntercept) {
+      setScreenRaw("phaseComplete");
+    } else {
+      setScreenRaw("home");
+    }
+  }, [onLessonComplete, onboardingData.onboardingCommitmentComplete, onboardingData.wirdIntroSeen]);
+
+  // Retry failed lesson: record mastery from failed attempt, skip intro
+  const handleLessonRetry = useCallback((lessonId, quizResults) => {
+    // Record mastery from failed attempt (important for SRS)
+    onLessonComplete(lessonId, quizResults, []);
+    // Remount LessonScreen, skip intro on retry
+    setIsRetry(true);
+    setLessonKey(k => k + 1);
+  }, [onLessonComplete]);
 
   const handleDismissHadith = useCallback(() => {
     onDismissHadith();
-    setScreen("home");
+    setScreenRaw("home");
   }, [onDismissHadith]);
 
   const handlePhaseCompleteContinue = useCallback(() => {
     onPhaseCompleteContinue();
-    setScreen("home");
+    setScreenRaw("home");
   }, [onPhaseCompleteContinue]);
 
   if (!hasCompletedOnboarding) return (
@@ -155,6 +220,7 @@ export default function App() {
           Your progress could not be saved. Please export a backup from the Progress screen.
         </div>
       )}
+      {screen === "wirdIntroduction" && <WirdIntroduction onComplete={handleWirdIntroComplete} />}
       {screen === "postLessonOnboarding" && <PostLessonOnboarding onComplete={handlePostLessonComplete} />}
       {screen === "returnHadith" && <ReturnHadithScreen onContinue={handleDismissHadith} />}
       {screen === "phaseComplete" && phaseCompleteData && <PhaseCompleteScreen phase={phaseCompleteData} nextPhase={phaseCompleteData.nextPhase} onContinue={handlePhaseCompleteContinue} wird={wirdState.currentWird} />}
@@ -174,22 +240,23 @@ export default function App() {
         return (
           <LessonErrorBoundary onBack={handleGoHome}>
             <LessonScreen
+              key={lessonKey}
               lessonId="review"
               lessonOverride={reviewPayload}
-              progress={progress} completedLessonIds={completedLessonIds} lessonsCompleted={lessonsCompleted} onComplete={handleLessonComplete} onBack={handleGoHome}
+              progress={progress} completedLessonIds={completedLessonIds} lessonsCompleted={lessonsCompleted} onComplete={handleLessonComplete} onRetry={handleLessonRetry} onBack={handleGoHome} skipIntro={isRetry}
             />
           </LessonErrorBoundary>
         );
       })()}
       {screen === "lesson" && currentLessonId !== "review" && (
         <LessonErrorBoundary onBack={handleGoHome}>
-          <LessonScreen lessonId={currentLessonId} progress={progress} completedLessonIds={completedLessonIds} lessonsCompleted={lessonsCompleted} onComplete={handleLessonComplete} onBack={handleGoHome} />
+          <LessonScreen key={lessonKey} lessonId={currentLessonId} progress={progress} completedLessonIds={completedLessonIds} lessonsCompleted={lessonsCompleted} onComplete={handleLessonComplete} onRetry={handleLessonRetry} onBack={handleGoHome} skipIntro={isRetry} />
         </LessonErrorBoundary>
       )}
       {screen === "progress" && <ProgressScreen progress={progress} completedLessonIds={completedLessonIds} onStartLesson={handleStartLesson} />}
-      {!["lesson", "returnHadith", "phaseComplete", "postLessonOnboarding"].includes(screen) && <div className="nav-bar">
-        <button className={`nav-item ${activeTab === "home" ? "active" : ""}`} onClick={() => setScreen("home")}><Icons.Home size={22} color={activeTab === "home" ? "var(--c-primary)" : "var(--c-text-muted)"} /><span>Home</span></button>
-        <button className={`nav-item ${activeTab === "progress" ? "active" : ""}`} onClick={() => setScreen("progress")}><Icons.Chart size={22} color={activeTab === "progress" ? "var(--c-primary)" : "var(--c-text-muted)"} /><span>Progress</span></button>
+      {!["lesson", "returnHadith", "phaseComplete", "wirdIntroduction", "postLessonOnboarding"].includes(screen) && <div className="nav-bar">
+        <button className={`nav-item ${activeTab === "home" ? "active" : ""}`} onClick={() => setScreenRaw("home")}><Icons.Home size={22} color={activeTab === "home" ? "var(--c-primary)" : "var(--c-text-muted)"} /><span>Home</span></button>
+        <button className={`nav-item ${activeTab === "progress" ? "active" : ""}`} onClick={() => setScreenRaw("progress")}><Icons.Chart size={22} color={activeTab === "progress" ? "var(--c-primary)" : "var(--c-text-muted)"} /><span>Progress</span></button>
       </div>}
     </div>
   );

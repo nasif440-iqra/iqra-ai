@@ -1,6 +1,6 @@
 import { LESSONS, PHASE_1_COMPLETION_THRESHOLD, PHASE_2_COMPLETION_THRESHOLD } from "../data/lessons.js";
 
-const STORAGE_KEY = "iqra_progress";
+const STORAGE_KEY = "tila_progress";
 export const PROGRESS_SCHEMA_VERSION = 3;
 
 const VALID_LESSON_IDS = new Set(LESSONS.map(l => l.id));
@@ -15,6 +15,26 @@ export function resetProgress() {
   location.reload();
 }
 if (typeof window !== "undefined") window.resetProgress = resetProgress;
+
+/** Call from browser console: unlockAllLessons() — marks every lesson as completed. */
+export function unlockAllLessons() {
+  const allIds = LESSONS.map(l => l.id);
+  const raw = localStorage.getItem(STORAGE_KEY);
+  const data = raw ? JSON.parse(raw) : {};
+  if (data.lessonCompletion) {
+    data.lessonCompletion.completedLessonIds = allIds;
+  } else {
+    data.lessonCompletion = { completedLessonIds: allIds };
+  }
+  data.onboarded = true;
+  data.onboardingCommitmentComplete = true;
+  data.onboardingVersion = 2;
+  data.wirdIntroSeen = true;
+  data.schemaVersion = PROGRESS_SCHEMA_VERSION;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  location.reload();
+}
+if (typeof window !== "undefined") window.unlockAllLessons = unlockAllLessons;
 
 function loadRaw() {
   try {
@@ -163,6 +183,8 @@ export function loadProgress() {
   // Legacy users (v1) who already completed the old onboarding should NOT be
   // routed into the post-lesson commitment flow. Default their commitment to true.
   const onboardingCommitmentComplete = data?.onboardingCommitmentComplete === true || (onboarded && onboardingVersion < 2);
+  // Existing users who already have completed lessons should skip the Wird intro
+  const wirdIntroSeen = data?.wirdIntroSeen === true || (onboarded && completedLessonIds.length > 0);
 
   return {
     schemaVersion: PROGRESS_SCHEMA_VERSION,
@@ -173,6 +195,7 @@ export function loadProgress() {
     onboardingMotivation,
     onboardingCommitmentComplete,
     onboardingVersion,
+    wirdIntroSeen,
     completedLessonIds,
     mastery,
     habit,
@@ -199,7 +222,7 @@ export function buildLegacyProgressView(entities) {
 }
 
 /** Returns true on success, false on failure (storage full or unavailable). */
-export function saveProgress({ onboarded, onboardingIntention, onboardingDailyGoal, onboardingStartingPoint, onboardingMotivation, onboardingCommitmentComplete, onboardingVersion, completedLessonIds, mastery, habit }) {
+export function saveProgress({ onboarded, onboardingIntention, onboardingDailyGoal, onboardingStartingPoint, onboardingMotivation, onboardingCommitmentComplete, onboardingVersion, wirdIntroSeen, completedLessonIds, mastery, habit }) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       schemaVersion: PROGRESS_SCHEMA_VERSION,
@@ -210,6 +233,7 @@ export function saveProgress({ onboarded, onboardingIntention, onboardingDailyGo
       onboardingMotivation: onboardingMotivation || null,
       onboardingCommitmentComplete: onboardingCommitmentComplete || false,
       onboardingVersion: onboardingVersion || 2,
+      wirdIntroSeen: wirdIntroSeen || false,
       lessonCompletion: {
         completedLessonIds,
       },

@@ -90,8 +90,11 @@ export function generateHarakatQs(lesson) {
         usedHarakat.add(harakahId);
         const sameMark = combos.filter(c => c.harakahId === harakahId);
         if (sameMark.length >= 2) {
+          // Pick target first, then build options that INCLUDE the target
           const target = pickRandom(sameMark);
-          phaseC.push({ type: "tap", prompt: `Which letter says \u201C${target.sound}\u201D?`, targetId: target.id, isHarakat: true, hasAudio: true, ttsText: target.audioText, options: shuffle(sameMark.slice(0, 3).map(c => ({ id: c.id, label: c.display, isCorrect: c.id === target.id }))) });
+          const others = sameMark.filter(c => c.id !== target.id);
+          const opts = [target, ...shuffle(others).slice(0, 2)];
+          phaseC.push({ type: "tap", prompt: `Which letter says \u201C${target.sound}\u201D?`, targetId: target.id, isHarakat: true, hasAudio: true, ttsText: target.audioText, options: shuffle(opts.map(c => ({ id: c.id, label: c.display, isCorrect: c.id === target.id }))) });
         }
       }
     }

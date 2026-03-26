@@ -157,7 +157,6 @@ export default function OnboardingScreen({ onComplete, onStartLesson1 }) {
   const [isCorrect, setIsCorrect] = useState(null);
   const [hasPlayedAudio, setHasPlayedAudio] = useState(false);
   const [playPulse, setPlayPulse] = useState(false);
-  const splashTimerRef = useRef(null);
   const letterRevealTimerRef = useRef(null);
 
   const goNext = useCallback(() => {
@@ -165,15 +164,7 @@ export default function OnboardingScreen({ onComplete, onStartLesson1 }) {
     setStep(s => s + 1);
   }, []);
 
-  /* Splash auto-advance */
-  useEffect(() => {
-    if (step === 0) {
-      splashTimerRef.current = setTimeout(() => {
-        setStep(1);
-      }, 3500);
-      return () => clearTimeout(splashTimerRef.current);
-    }
-  }, [step]);
+  /* Splash — user-initiated (no auto-advance) */
 
   /* Letter reveal auto-advance */
   useEffect(() => {
@@ -231,7 +222,7 @@ export default function OnboardingScreen({ onComplete, onStartLesson1 }) {
       )}
 
       <AnimatePresence mode="wait">
-        {/* ── STEP 0: SPLASH — Brand reveal ── */}
+        {/* ── STEP 0: WELCOME — App introduction ── */}
         {step === 0 && (
           <motion.div key="splash" style={styles.splashRoot} {...dissolve} transition={{ duration: 0.8 }}>
             {/* Glow orb */}
@@ -243,44 +234,69 @@ export default function OnboardingScreen({ onComplete, onStartLesson1 }) {
               transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
             />
 
-            {/* Arabic brand text — single node, not split */}
-            <motion.span
-              dir="rtl"
-              style={styles.splashArabic}
-              initial={{ opacity: 0, scale: 0.8, filter: "blur(8px)" }}
-              animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-              transition={{ delay: 0.3, duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
-            >
-              اقْرَأْ
-            </motion.span>
+            {/* Crescent moon icon */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.6 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+              style={{ fontSize: 44, lineHeight: 1, marginBottom: 20, color: "var(--c-accent)", position: "relative", zIndex: 1 }}
+            >{"\u263D"}</motion.div>
 
-            {/* English subtitle */}
-            <motion.p
-              style={styles.splashSubtitle}
-              initial={{ opacity: 0, y: 10 }}
+            {/* App name */}
+            <motion.h1
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+              className="shimmer-text"
+              style={{ fontFamily: "var(--font-heading)", fontSize: 42, fontWeight: 700, color: "var(--c-text)", lineHeight: 1, position: "relative", zIndex: 1, marginBottom: 12 }}
+            >Tila</motion.h1>
+
+            {/* Tagline */}
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.0, duration: 0.8 }}
+              style={{ fontSize: 16, color: "var(--c-text-soft)", fontWeight: 500, lineHeight: 1.5, textAlign: "center", maxWidth: 260, position: "relative", zIndex: 1, marginBottom: 8 }}
+            >Learn to read the Quran,{"\n"}one letter at a time.</motion.p>
+
+            {/* Arabic whisper */}
+            <motion.p
+              dir="rtl"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
               transition={{ delay: 1.6, duration: 0.8 }}
+              style={{ fontFamily: "var(--font-arabic)", fontSize: 22, color: "var(--c-accent)", opacity: 0.6, marginTop: 4, marginBottom: 32, position: "relative", zIndex: 1 }}
+            >{"\u0627\u0642\u0652\u0631\u064E\u0623\u0652"}</motion.p>
+
+            {/* CTA */}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 2.0, duration: 0.6 }}
+              style={{ width: "100%", maxWidth: 320, position: "relative", zIndex: 1 }}
             >
-              Read. Learn. Begin.
-            </motion.p>
+              <button className="btn btn-primary" onClick={goNext} style={{ width: "100%" }}>
+                Get Started
+              </button>
+            </motion.div>
           </motion.div>
         )}
 
-        {/* ── STEP 1: SACRED — "The first word revealed was Iqra" ── */}
+        {/* ── STEP 1: SACRED — "Tilawat" ── */}
         {step === 1 && (
           <motion.div key="sacred" style={styles.card} {...blurIn}>
             <motion.div {...stagger(0.15)} style={styles.sacredFocal}>
               <div style={styles.sacredGlow} />
-              <span style={styles.sacredArabic} dir="rtl">اقْرَأْ</span>
+              <span style={styles.sacredArabic} dir="rtl">{"\u062A\u0650\u0644\u0627\u0648\u064E\u0629"}</span>
             </motion.div>
 
             <motion.h1 {...stagger(0.3)} style={styles.headline}>
-              <StaggeredText text="The first word revealed was" baseDelay={0.35} />
-              <em className="shimmer-text" style={styles.iqraShimmer}> Iqra</em>
+              <StaggeredText text="To recite the Quran beautifully is" baseDelay={0.35} />
+              <em className="shimmer-text" style={styles.tilaShimmer}> Tilawat</em>
             </motion.h1>
 
             <motion.p {...stagger(0.7)} style={styles.body}>
-              Read. Recite. Begin.
+              Recite. Reflect. Return.
             </motion.p>
 
             <motion.div {...stagger(0.85)} style={styles.actions}>
@@ -819,7 +835,7 @@ const styles = {
     position: "relative",
     zIndex: 1,
   },
-  iqraShimmer: {
+  tilaShimmer: {
     fontFamily: "var(--font-heading)",
     fontStyle: "italic",
     fontSize: "inherit",

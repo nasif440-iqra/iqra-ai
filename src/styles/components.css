@@ -36,6 +36,7 @@
 }
 .btn:hover { opacity: 0.92; }
 .btn:active { transform: scale(0.97); }
+.btn:focus-visible { outline: 2px solid var(--c-primary); outline-offset: 2px; }
 .btn-primary { background: var(--c-primary); color: white; box-shadow: 0 4px 16px rgba(22, 51, 35, 0.20); }
 .btn-primary:active { box-shadow: 0 2px 8px rgba(22, 51, 35, 0.15); }
 .btn-secondary { background: var(--c-primary-light); color: white; }
@@ -100,6 +101,7 @@
   -webkit-tap-highlight-color: transparent;
 }
 .nav-item:active { transform: scale(0.93); }
+.nav-item:focus-visible { outline: 2px solid var(--c-primary); outline-offset: 2px; }
 .nav-item span { font-size: 10px; font-weight: 700; color: var(--c-text-muted); letter-spacing: 0.03em; transition: color var(--dur-normal) var(--ease-default); }
 .nav-item.active span { color: var(--c-primary); font-weight: 700; }
 
@@ -123,6 +125,7 @@
 }
 .quiz-option:hover { border-color: var(--c-primary); box-shadow: 0 2px 12px rgba(22, 51, 35, 0.08); }
 .quiz-option:active { transform: scale(0.95); }
+.quiz-option:focus-visible { outline: 2px solid var(--c-primary); outline-offset: 2px; }
 .quiz-option.correct { border-color: var(--c-primary); background: var(--c-primary-soft); animation: pop 0.35s var(--ease-bounce) both, correctGlow 0.6s var(--ease-default) 0.15s both; }
 .quiz-option.wrong { border-color: var(--c-danger); background: var(--c-danger-light); animation: shake var(--dur-slow) var(--ease-default) both; }
 .quiz-option.revealed-correct { border-color: var(--c-primary); background: var(--c-primary-soft); animation: glowPulse 0.8s var(--ease-default) both; }
@@ -175,7 +178,7 @@ button.quiz-option {
   background: radial-gradient(circle, rgba(196,164,100,0.25) 0%, rgba(242,234,222,0) 70%);
 }
 
-/* Shimmer text effect for "Iqra" */
+/* Shimmer text effect for "Tila" */
 .shimmer-text {
   background: linear-gradient(90deg, #163323 0%, #C4A464 25%, #163323 50%, #C4A464 75%, #163323 100%);
   background-size: 200% auto;

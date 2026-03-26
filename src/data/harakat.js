@@ -29,6 +29,14 @@ function getComboLabel(letter, harakat) {
   return base + harakat.sound;
 }
 
+// Alif with short vowels needs Hamza-bearing forms for TTS to pronounce correctly.
+// Bare Alif + damma/kasra is orthographically unusual and TTS may produce silence.
+const ALIF_AUDIO_TEXT = {
+  fatha: "\u0623\u064E", // أَ — Alif with Hamza above + Fatha
+  kasra: "\u0625\u0650", // إِ — Alif with Hamza below + Kasra
+  damma: "\u0623\u064F", // أُ — Alif with Hamza above + Damma
+};
+
 // Dynamically generate harakat combos for any set of letter IDs
 export function generateHarakatCombos(letterIds, harakatIds) {
   const marks = harakatIds
@@ -46,12 +54,14 @@ export function generateHarakatCombos(letterIds, harakatIds) {
         combos.push(existing);
       } else {
         const display = letter.letter + h.mark;
+        // Use Hamza-bearing Alif for TTS audio (bare Alif + vowel marks don't pronounce reliably)
+        const audioText = (lid === 1 && ALIF_AUDIO_TEXT[h.id]) ? ALIF_AUDIO_TEXT[h.id] : display;
         combos.push({
           id,
           letterId: lid,
           harakahId: h.id,
           display,
-          audioText: display,
+          audioText,
           sound: getComboLabel(letter, h),
           letterName: letter.name,
         });

@@ -1,12 +1,11 @@
 import { useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
 import { ARABIC_LETTERS, getLetter } from "../data/letters.js";
 import { LESSONS } from "../data/lessons.js";
 import { Icons } from "./Icons.jsx";
-import { sfxTap, playLetterAudio } from "../lib/audio.js";
+import { sfxTap } from "../lib/audio.js";
 import { resetProgress, exportProgressJSON, importProgressJSON } from "../lib/progress.js";
 import { getCurrentLesson, getLearnedLetterIds } from "../lib/selectors.js";
-import { PronunciationCard } from "./PronunciationGuide.jsx";
+import { LetterDetailModal } from "./PronunciationGuide.jsx";
 
 /* ── Phase grouping definitions ──────────────────────────────────────────── */
 const PHASE_GROUPS = [
@@ -20,13 +19,13 @@ const PHASE_GROUPS = [
     key: "sounds",
     title: "Letter Sounds",
     subtitle: "Connect each letter to how it sounds",
-    filter: (l) => l.phase === 2 && l.lessonMode === "sound",
+    filter: (l) => l.phase === 2 && (l.lessonMode === "sound" || (l.lessonMode === "checkpoint" && l.id === 85)),
   },
   {
     key: "contrast",
     title: "Sound Contrast",
     subtitle: "Distinguish similar-sounding letters",
-    filter: (l) => l.phase === 2 && l.lessonMode === "contrast",
+    filter: (l) => l.phase === 2 && (l.lessonMode === "contrast" || (l.lessonMode === "checkpoint" && l.id === 65)),
   },
   {
     key: "harakat-intro",
@@ -75,9 +74,8 @@ export default function ProgressScreen({
     return { ...group, lessons, doneCount, total, containsCurrent, status };
   });
 
-  // Auto-expand the phase containing the current lesson
-  const initialOpen = phases.find((p) => p.containsCurrent)?.key || phases[0]?.key;
-  const [openPhases, setOpenPhases] = useState(() => new Set(initialOpen ? [initialOpen] : []));
+  // All phases start closed — user taps to expand
+  const [openPhases, setOpenPhases] = useState(() => new Set());
 
   const toggle = (key) => {
     setOpenPhases((prev) => {
@@ -566,61 +564,13 @@ export default function ProgressScreen({
           })}
         </div>
 
-        {/* ── Letter Detail Panel ── */}
-        <AnimatePresence>
-          {selectedLetter && (
-            <motion.div
-              key={selectedLetter.id}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-              style={{ marginTop: 16 }}
-            >
-              <div style={{
-                background: "var(--c-bg-card)", borderRadius: 20, padding: 20,
-                border: "1px solid var(--c-border)", boxShadow: "var(--shadow-soft)",
-              }}>
-                {/* Letter header */}
-                <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 14 }}>
-                  <div style={{
-                    width: 56, height: 56, borderRadius: "50%", background: "var(--c-primary-soft)",
-                    border: "2px solid var(--c-primary)", display: "flex", alignItems: "center", justifyContent: "center",
-                  }}>
-                    <span style={{ fontFamily: "var(--font-arabic)", fontSize: 32, color: "var(--c-primary-dark)", lineHeight: 1, marginTop: 4 }} dir="rtl">{selectedLetter.letter}</span>
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: "var(--c-text)" }}>{selectedLetter.name}</div>
-                    <div style={{ fontSize: 12, color: "var(--c-accent)", fontWeight: 600 }}>"{selectedLetter.transliteration}" — {selectedLetter.soundHint}</div>
-                  </div>
-                  <button onClick={() => playLetterAudio(selectedLetter.id, "sound")} style={{ background: "none", border: "2px solid var(--c-accent)", borderRadius: "50%", width: 40, height: 40, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <Icons.Volume size={18} color="var(--c-accent)" />
-                  </button>
-                </div>
-
-                {/* Tip */}
-                <p style={{ fontSize: 13, color: "var(--c-text-soft)", lineHeight: 1.5, marginBottom: 12 }}>{selectedLetter.tip}</p>
-
-                {/* Stats */}
-                {progress[selectedLetter.id] && progress[selectedLetter.id].attempts > 0 && (
-                  <div style={{ display: "flex", gap: 12, marginBottom: 14 }}>
-                    <div style={{ fontSize: 11, color: "var(--c-text-muted)" }}>
-                      <span style={{ fontWeight: 700, color: "var(--c-primary)" }}>{progress[selectedLetter.id].correct}</span>/{progress[selectedLetter.id].attempts} correct
-                    </div>
-                    <div style={{ fontSize: 11, color: "var(--c-text-muted)" }}>
-                      {Math.round((progress[selectedLetter.id].correct / progress[selectedLetter.id].attempts) * 100)}% accuracy
-                    </div>
-                  </div>
-                )}
-
-                {/* Pronunciation guide if available */}
-                {selectedLetter.articulation && (
-                  <PronunciationCard letter={selectedLetter} audioType="sound" defaultOpen={true} />
-                )}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* ── Letter Detail Modal ── */}
+        <LetterDetailModal
+          letter={selectedLetter}
+          progress={progress}
+          isOpen={!!selectedLetter}
+          onClose={() => setSelectedLetterId(null)}
+        />
 
         {/* ── Data Management ── */}
         <h3
@@ -651,7 +601,7 @@ export default function ProgressScreen({
               const url = URL.createObjectURL(blob);
               const a = document.createElement("a");
               a.href = url;
-              a.download = `iqra-backup-${new Date().toISOString().slice(0, 10)}.json`;
+              a.download = `tila-backup-${new Date().toISOString().slice(0, 10)}.json`;
               a.click();
               URL.revokeObjectURL(url);
             }}

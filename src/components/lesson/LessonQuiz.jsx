@@ -104,25 +104,26 @@ export default function LessonQuiz({
           >
             {currentQ.hasAudio && (
               <div style={{ textAlign: "center", marginBottom: 16 }}>
-                <button onClick={() => playQuestionAudio(currentQ)} aria-label="Play audio" style={{ width: 72, height: 72, borderRadius: "50%", border: "2px solid var(--c-accent)", background: "var(--c-accent-light)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px", transition: "all 0.2s", boxShadow: "0 2px 12px rgba(196,164,100,0.15)" }}>
-                  <Icons.Volume size={28} color="var(--c-accent)" />
+                <button onClick={() => playQuestionAudio(currentQ)} aria-label="Play audio" style={{ width: 80, height: 80, borderRadius: "50%", border: "2px solid var(--c-accent)", background: "var(--c-accent-light)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px", transition: "all 0.2s", boxShadow: "0 2px 12px rgba(196,164,100,0.15)" }}>
+                  <Icons.Volume size={32} color="var(--c-accent)" />
                 </button>
                 <p style={{ fontSize: 16, fontWeight: 700, color: "var(--c-text)" }}>{currentQ.prompt}</p>
-                <button onClick={() => playQuestionAudio(currentQ)} aria-label="Replay sound" className="btn btn-ghost" style={{ fontSize: 13, color: "var(--c-accent)", marginTop: 4 }}>{"\uD83D\uDD0A"} Replay sound</button>
+                <button onClick={() => playQuestionAudio(currentQ)} aria-label="Replay sound" className="btn btn-ghost" style={{ fontSize: 14, color: "var(--c-accent)", marginTop: 4 }}><Icons.Volume size={16} color="var(--c-accent)" /> Replay sound</button>
               </div>
             )}
             {currentQ.type === "letter_to_sound" && (
               <div style={{ textAlign: "center", marginBottom: 14 }}>
                 <div className="arabic-letter" style={{ fontSize: 100, lineHeight: 1.5, paddingBottom: 6 }}>{currentQ.prompt}</div>
                 <p style={{ fontSize: 15, fontWeight: 600, color: "var(--c-text-soft)", marginTop: 6 }}>{currentQ.promptSubtext}</p>
-                <button onClick={() => playQuestionAudio(currentQ)} aria-label="Hear this letter" className="btn btn-ghost" style={{ fontSize: 13, color: "var(--c-accent)", marginTop: 4 }}>{"\uD83D\uDD0A"} Hear this letter</button>
+                <button onClick={() => playQuestionAudio(currentQ)} aria-label="Hear this letter" className="btn btn-ghost" style={{ fontSize: 14, color: "var(--c-accent)", marginTop: 4 }}><Icons.Volume size={16} color="var(--c-accent)" /> Hear this letter</button>
               </div>
             )}
             {currentQ.type === "letter_to_name" && !currentQ.hasAudio && (
               <div style={{ textAlign: "center", marginBottom: 14 }}>
                 <div className="arabic-letter" style={{ fontSize: 110, lineHeight: 1.5, paddingBottom: 6 }}>{currentQ.prompt}</div>
                 <p style={{ fontSize: 16, fontWeight: 600, color: "var(--c-text-soft)", marginTop: 6 }}>{currentQ.promptSubtext}</p>
-                {currentQ.ttsText && <button onClick={() => playGeneratedArabicAudio(currentQ.ttsText)} aria-label="Hear this sound" className="btn btn-ghost" style={{ fontSize: 13, color: "var(--c-accent)", marginTop: 4 }}>{"\uD83D\uDD0A"} Hear this sound</button>}
+                {/* No audio hint here — the question tests whether the user can identify
+                    the sound visually. TTS audio is available in the wrong-answer panel. */}
               </div>
             )}
             {!currentQ.hasAudio && currentQ.type !== "letter_to_name" && currentQ.type !== "letter_to_sound" && (
@@ -134,9 +135,12 @@ export default function LessonQuiz({
             {(() => {
               const optCount = currentQ.options.length;
               const isCompact = optCount <= 2;
+              const isTriple = optCount === 3;
               const gridStyle = isCompact
                 ? { display: "flex", flexDirection: "column", gap: 16, width: "100%", maxWidth: 340 }
-                : { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, width: "100%", maxWidth: 340 };
+                : isTriple
+                  ? { display: "flex", flexWrap: "wrap", gap: 14, width: "100%", maxWidth: 340, justifyContent: "center" }
+                  : { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, width: "100%", maxWidth: 340 };
               return (
                 <motion.div
                   variants={{ show: { transition: { staggerChildren: 0.07 } } }}
@@ -144,7 +148,7 @@ export default function LessonQuiz({
                   animate="show"
                   style={gridStyle}
                 >
-                  {currentQ.options.map(opt => {
+                  {currentQ.options.map((opt, optIdx) => {
                     let cls = "quiz-option";
                     if (answered) { if (opt.id === selected && isCorrect) cls += " correct"; else if (opt.id === selected && !isCorrect) cls += " wrong"; else if (opt.isCorrect && !isCorrect) cls += " revealed-correct"; else cls += " disabled"; }
                     const isSndOpt = currentQ.optionMode === "sound";
@@ -182,7 +186,7 @@ export default function LessonQuiz({
                         disabled={answered}
                         aria-label={opt.ariaLabel || opt.label}
                         aria-pressed={opt.id === selected}
-                        style={{ padding: optPad, minHeight: optMin, flexDirection: isCompact && isSndOpt ? "row" : "column", gap: isCompact && isSndOpt ? 10 : undefined, position: "relative" }}
+                        style={{ padding: optPad, minHeight: optMin, flexDirection: isCompact && isSndOpt ? "row" : "column", gap: isCompact && isSndOpt ? 10 : undefined, position: "relative", ...(isTriple ? { width: "calc(50% - 7px)", flexShrink: 0 } : {}) }}
                       >
                         {isSndOpt ? (<><span style={{ fontSize: sndSize, fontWeight: 800, color: (answered && opt.isCorrect) ? "var(--c-primary-dark)" : (answered && opt.id === selected && !isCorrect) ? "var(--c-danger)" : "var(--c-text)", lineHeight: 1 }}>{opt.label}</span>{opt.sublabel && <span style={{ fontSize: isCompact ? 12 : 11, color: "var(--c-text-muted)", marginTop: isCompact ? 0 : 4, textAlign: "center", lineHeight: 1.3 }}>{opt.sublabel}</span>}</>) : (
                           <span style={{ fontFamily: isArabicOpt ? "var(--font-arabic)" : "var(--font-body)", fontSize: isArabicOpt ? arabicSize : 18, fontWeight: isArabicOpt ? 400 : 700, color: (answered && opt.isCorrect) ? "var(--c-primary-dark)" : (answered && opt.id === selected && !isCorrect) ? "var(--c-danger)" : "var(--c-text)", lineHeight: isArabicOpt ? 1.5 : 1 }}>{opt.label}</span>
@@ -251,11 +255,11 @@ export default function LessonQuiz({
             {(isSoundQ || currentQ.ttsText) && (
               <div style={{ display: "flex", gap: 8, marginTop: 2 }}>
                 <button className="btn btn-outline" onClick={() => playQuestionAudio(currentQ)} style={{ flex: 1, fontSize: 13, padding: "10px 12px" }}>
-                  <Icons.Volume size={14} color="var(--c-accent)" /> Hear correct
+                  <Icons.Volume size={16} color="var(--c-accent)" /> Hear correct
                 </button>
                 {!currentQ.ttsText && selected && selected !== currentQ.targetId && (
                   <button className="btn btn-outline" onClick={() => playLetterAudio(selected, audioType)} style={{ flex: 1, fontSize: 13, padding: "10px 12px", borderColor: "var(--c-danger-light)" }}>
-                    <Icons.Volume size={14} color="var(--c-danger)" /> Hear your pick
+                    <Icons.Volume size={16} color="var(--c-danger)" /> Hear your pick
                   </button>
                 )}
               </div>

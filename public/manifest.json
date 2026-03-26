@@ -1,7 +1,7 @@
 {
-  "name": "Iqra AI — Learn to Read Quran",
-  "short_name": "Iqra AI",
-  "description": "A free, progressive app teaching you to read the Quran in Arabic — one letter at a time.",
+  "name": "Tila — Learn to Recite Quran",
+  "short_name": "Tila",
+  "description": "A free, progressive app teaching you to recite the Quran in Arabic — one letter at a time.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#F8F6F0",

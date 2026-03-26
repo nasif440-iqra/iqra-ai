@@ -1,6 +1,18 @@
 // ── Web Audio API engine for SFX ──
 let audioCtx = null;
+const BUFFER_CACHE_MAX = 80;
 const bufferCache = {};
+
+function evictBufferCache() {
+  const keys = Object.keys(bufferCache);
+  if (keys.length >= BUFFER_CACHE_MAX) {
+    // Remove the oldest 20% of entries
+    const toRemove = Math.ceil(keys.length * 0.2);
+    for (let i = 0; i < toRemove; i++) {
+      delete bufferCache[keys[i]];
+    }
+  }
+}
 
 function getAudioContext() {
   if (!audioCtx) {
@@ -45,8 +57,8 @@ export function preloadAudio() {
       })
       .then(buf => ctx.decodeAudioData(buf))
       .then(decoded => {
+        evictBufferCache();
         bufferCache[filename] = decoded;
-
       })
       .catch(e => console.warn(`[SFX] Failed to preload ${filename}:`, e.message));
   });
@@ -60,7 +72,7 @@ export function preloadAudio() {
         fetch(`/${path}`)
           .then(res => res.ok ? res.arrayBuffer() : Promise.reject())
           .then(buf => ctx.decodeAudioData(buf))
-          .then(decoded => { bufferCache[path] = decoded; })
+          .then(decoded => { evictBufferCache(); bufferCache[path] = decoded; })
           .catch(() => {});
       }
     });
@@ -83,7 +95,7 @@ function playSound(filename, volume) {
           return res.arrayBuffer();
         })
         .then(buf => ctx.decodeAudioData(buf))
-        .then(decoded => { bufferCache[filename] = decoded; })
+        .then(decoded => { evictBufferCache(); bufferCache[filename] = decoded; })
         .catch(e => console.warn(`[SFX] On-demand load failed for ${filename}:`, e.message));
       return null;
     }
@@ -153,6 +165,7 @@ export function sfxAudioButton()       { playSound('audio_play_button.wav'); }
 export function sfxTransition()        { playSound('screen_transition.wav'); }
 export function sfxReviewDue()         { playSound('review_due.wav'); }
 export function sfxWirdMilestone()     { playSound('wird_milestone.wav'); }
+export function sfxLessonIncomplete()  { playSound('review_due.wav', 0.5); }
 export function sfxTap()               { playSound('button_tap.wav'); }
 
 // ── Letter audio (unchanged) ──
@@ -217,6 +230,7 @@ export function playLetterAudio(id, audioType = "name") {
     })
     .then(buf => ctx.decodeAudioData(buf))
     .then(decoded => {
+      evictBufferCache();
       bufferCache[src] = decoded;
       const source = ctx.createBufferSource();
       source.buffer = decoded;

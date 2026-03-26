@@ -12,9 +12,12 @@ import LessonMidCelebrate from "./LessonMidCelebrate.jsx";
 import LessonSummary from "./LessonSummary.jsx";
 import LessonSpeak from "./LessonSpeak.jsx";
 
-export default function LessonScreen({ lessonId, lessonOverride, progress, completedLessonIds, lessonsCompleted, onComplete, onBack }) {
+export default function LessonScreen({ lessonId, lessonOverride, progress, completedLessonIds, lessonsCompleted, onComplete, onRetry, onBack, skipIntro }) {
   const lesson = lessonOverride || LESSONS.find(l => l.id === lessonId);
-  const teachLetters = (lesson.teachIds || []).map(id => getLetter(id));
+  if (!lesson) {
+    return <div style={{ padding: 40, textAlign: "center" }}><p>Lesson not found.</p><button className="btn btn-primary" onClick={onBack}>Go Back</button></div>;
+  }
+  const teachLetters = (lesson.teachIds || []).map(id => getLetter(id)).filter(Boolean);
   const isSound = lesson.lessonMode === "sound";
   const isContrast = lesson.lessonMode === "contrast";
   const isHarakatIntro = lesson.lessonMode === "harakat-intro";
@@ -25,9 +28,10 @@ export default function LessonScreen({ lessonId, lessonOverride, progress, compl
       ? lesson.teachCombos.map(id => getCombo(id)).filter(Boolean)
       : generateHarakatCombos(lesson.teachIds || [], lesson.teachHarakat))
     : [];
-  const audioType = (isSound || isContrast) ? "sound" : "name";
+  const isPhase2Checkpoint = lesson.lessonMode === "checkpoint" && lesson.phase === 2;
+  const audioType = (isSound || isContrast || isPhase2Checkpoint) ? "sound" : "name";
 
-  const [phase, setPhase] = useState("intro");
+  const [phase, setPhase] = useState(skipIntro ? "quiz" : "intro");
   const [speakIndex, setSpeakIndex] = useState(0);
   const [speakPhase, setSpeakPhase] = useState("ready");
   const [speakResults, setSpeakResults] = useState([]);
@@ -54,7 +58,7 @@ export default function LessonScreen({ lessonId, lessonOverride, progress, compl
   }
 
   if (phase === "summary") {
-    return <LessonSummary lesson={lesson} lessonId={lessonId} teachLetters={teachLetters} lessonCombos={lessonCombos} quizResults={quiz.quizResults} speakResults={speakResults} lessonsCompleted={lessonsCompleted} isHarakatIntro={isHarakatIntro} isHarakatApplied={isHarakatApplied} onComplete={onComplete} onBack={onBack} onStartSpeak={FEATURES.speakingPractice ? () => setPhase("speak") : null} speakingEnabled={FEATURES.speakingPractice} />;
+    return <LessonSummary lesson={lesson} lessonId={lessonId} teachLetters={teachLetters} lessonCombos={lessonCombos} quizResults={quiz.quizResults} speakResults={speakResults} lessonsCompleted={lessonsCompleted} isHarakatIntro={isHarakatIntro} isHarakatApplied={isHarakatApplied} onComplete={onComplete} onRetry={onRetry} onBack={onBack} onStartSpeak={FEATURES.speakingPractice ? () => setPhase("speak") : null} speakingEnabled={FEATURES.speakingPractice} />;
   }
 
   if (FEATURES.speakingPractice && phase === "speak" && currentSpeakLetter) {

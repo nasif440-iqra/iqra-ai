@@ -5,7 +5,7 @@ import {
   getCompletionTier,
 } from "../lib/engagement.js";
 import {
-  getSupportedReviewLetterIds,
+  extractReviewItems,
   buildReviewLessonPayload,
   planReviewSession,
 } from "../lib/selectors.js";
@@ -104,36 +104,44 @@ describe("getCompletionTier", () => {
 
 // ── Review launch safety tests ──
 
-describe("getSupportedReviewLetterIds", () => {
+describe("extractReviewItems", () => {
   it("extracts numeric letter IDs from entity keys", () => {
     const keys = ["letter:2", "letter:5", "letter:8"];
-    expect(getSupportedReviewLetterIds(keys)).toEqual([2, 5, 8]);
+    const { letterIds } = extractReviewItems(keys);
+    expect(letterIds).toEqual([2, 5, 8]);
   });
 
-  it("filters out combo entities", () => {
+  it("separates combo entities into comboIds", () => {
     const keys = ["letter:2", "combo:ba-fatha", "letter:5", "combo:ta-kasra"];
-    const result = getSupportedReviewLetterIds(keys);
-    expect(result).toEqual([2, 5]);
-    expect(result).not.toContain("combo:ba-fatha");
+    const { letterIds, comboIds } = extractReviewItems(keys);
+    expect(letterIds).toEqual([2, 5]);
+    expect(comboIds).toEqual(["ba-fatha", "ta-kasra"]);
   });
 
   it("filters out unknown entities", () => {
     const keys = ["unknown:foo", "letter:3"];
-    expect(getSupportedReviewLetterIds(keys)).toEqual([3]);
+    const { letterIds, comboIds } = extractReviewItems(keys);
+    expect(letterIds).toEqual([3]);
+    expect(comboIds).toEqual([]);
   });
 
-  it("returns empty array for all unsupported items", () => {
-    const keys = ["combo:ba-fatha", "combo:ta-kasra", "unknown:x"];
-    expect(getSupportedReviewLetterIds(keys)).toEqual([]);
+  it("returns combos when all entities are combos", () => {
+    const keys = ["combo:ba-fatha", "combo:ta-kasra"];
+    const { letterIds, comboIds } = extractReviewItems(keys);
+    expect(letterIds).toEqual([]);
+    expect(comboIds).toEqual(["ba-fatha", "ta-kasra"]);
   });
 
   it("deduplicates letter IDs", () => {
     const keys = ["letter:2", "letter:2", "letter:5"];
-    expect(getSupportedReviewLetterIds(keys)).toEqual([2, 5]);
+    const { letterIds } = extractReviewItems(keys);
+    expect(letterIds).toEqual([2, 5]);
   });
 
-  it("returns empty array for empty input", () => {
-    expect(getSupportedReviewLetterIds([])).toEqual([]);
+  it("returns empty arrays for empty input", () => {
+    const { letterIds, comboIds } = extractReviewItems([]);
+    expect(letterIds).toEqual([]);
+    expect(comboIds).toEqual([]);
   });
 });
 
@@ -163,7 +171,7 @@ describe("buildReviewLessonPayload", () => {
     result.teachIds.forEach(id => expect(typeof id).toBe("number"));
   });
 
-  it("filters out combo entities and still builds payload from letters", () => {
+  it("includes both letters and combos in payload", () => {
     const mastery = {
       entities: {
         "letter:3": { correct: 1, attempts: 4, lastSeen: "2026-03-24", nextReview: "2026-03-25", intervalDays: 1, sessionStreak: 0 },
@@ -175,10 +183,10 @@ describe("buildReviewLessonPayload", () => {
     const result = buildReviewLessonPayload(mastery, [1, 2], "2026-03-25");
     expect(result).not.toBeNull();
     expect(result.teachIds).toContain(3);
-    expect(result.teachIds.every(id => typeof id === "number")).toBe(true);
+    expect(result.teachCombos).toContain("ba-fatha");
   });
 
-  it("returns null when only combo entities are due", () => {
+  it("returns non-null when only combo entities are due", () => {
     const mastery = {
       entities: {
         "combo:ba-fatha": { correct: 0, attempts: 3, lastSeen: "2026-03-24", nextReview: "2026-03-25", intervalDays: 1, sessionStreak: 0 },
@@ -187,7 +195,8 @@ describe("buildReviewLessonPayload", () => {
       confusions: {},
     };
     const result = buildReviewLessonPayload(mastery, [1, 2], "2026-03-25");
-    expect(result).toBeNull();
+    expect(result).not.toBeNull();
+    expect(result.teachCombos).toContain("ba-fatha");
   });
 });
 

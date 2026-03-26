@@ -152,7 +152,7 @@ describe("loadProgress migration", () => {
   });
 
   it("preserves valid Phase 2/3 lesson IDs on load", () => {
-    localStorage.setItem("iqra_progress", JSON.stringify({
+    localStorage.setItem("tila_progress", JSON.stringify({
       completedLessonIds: [1, 2, 3, 44, 50, 66, 83],
     }));
     const result = loadProgress();
@@ -163,7 +163,7 @@ describe("loadProgress migration", () => {
   });
 
   it("removes invalid IDs on load", () => {
-    localStorage.setItem("iqra_progress", JSON.stringify({
+    localStorage.setItem("tila_progress", JSON.stringify({
       completedLessonIds: [1, 999, -1, 2],
     }));
     const result = loadProgress();
@@ -185,8 +185,8 @@ describe("loadProgress migration", () => {
     expect(result.onboardingDailyGoal).toBe("5");
   });
 
-  it("canonical iqra_progress onboarding takes precedence over legacy keys", () => {
-    localStorage.setItem("iqra_progress", JSON.stringify({
+  it("canonical tila_progress onboarding takes precedence over legacy keys", () => {
+    localStorage.setItem("tila_progress", JSON.stringify({
       onboarded: true,
       onboardingIntention: "canonical intention",
       onboardingDailyGoal: "10",
@@ -227,7 +227,7 @@ describe("saveProgress", () => {
       onboardingDailyGoal: "5",
       completedLessonIds: [1, 2],
     }));
-    const stored = JSON.parse(localStorage.getItem("iqra_progress"));
+    const stored = JSON.parse(localStorage.getItem("tila_progress"));
     expect(stored.schemaVersion).toBe(PROGRESS_SCHEMA_VERSION);
     expect(stored.onboardingIntention).toBe("test");
     expect(stored.onboardingDailyGoal).toBe("5");
@@ -240,7 +240,7 @@ describe("saveProgress", () => {
       onboardingCommitmentComplete: true,
       onboardingVersion: 2,
     }));
-    const stored = JSON.parse(localStorage.getItem("iqra_progress"));
+    const stored = JSON.parse(localStorage.getItem("tila_progress"));
     expect(stored.onboardingStartingPoint).toBe("I'm completely new");
     expect(stored.onboardingMotivation).toBe("I want to read the Quran confidently");
     expect(stored.onboardingCommitmentComplete).toBe(true);
@@ -249,7 +249,7 @@ describe("saveProgress", () => {
 
   it("does not persist redundant lessonsCompleted or lastCompletedLessonId", () => {
     saveProgress(makeSavePayload({ completedLessonIds: [1, 2, 3] }));
-    const stored = JSON.parse(localStorage.getItem("iqra_progress"));
+    const stored = JSON.parse(localStorage.getItem("tila_progress"));
     expect(stored.lessonsCompleted).toBeUndefined();
     expect(stored.lastCompletedLessonId).toBeUndefined();
   });
@@ -261,7 +261,7 @@ describe("resetProgress", () => {
   });
 
   it("clears all onboarding and progress keys", () => {
-    localStorage.setItem("iqra_progress", JSON.stringify({ onboarded: true }));
+    localStorage.setItem("tila_progress", JSON.stringify({ onboarded: true }));
     localStorage.setItem("hasCompletedOnboarding", "true");
     localStorage.setItem("onboardingIntention", "test");
     localStorage.setItem("onboardingDailyGoal", "5");
@@ -272,7 +272,7 @@ describe("resetProgress", () => {
     window.location = { reload: vi.fn() };
     resetProgress();
 
-    expect(localStorage.getItem("iqra_progress")).toBeNull();
+    expect(localStorage.getItem("tila_progress")).toBeNull();
     expect(localStorage.getItem("hasCompletedOnboarding")).toBeNull();
     expect(localStorage.getItem("onboardingIntention")).toBeNull();
     expect(localStorage.getItem("onboardingDailyGoal")).toBeNull();
@@ -313,7 +313,7 @@ describe("canonical onboarding persistence", () => {
     window.location = { reload: vi.fn() };
     resetProgress();
 
-    expect(localStorage.getItem("iqra_progress")).toBeNull();
+    expect(localStorage.getItem("tila_progress")).toBeNull();
     expect(localStorage.getItem("hasCompletedOnboarding")).toBeNull();
     expect(localStorage.getItem("onboardingIntention")).toBeNull();
 
@@ -342,7 +342,7 @@ describe("v2 onboarding fields persistence", () => {
 
   it("legacy v1 users get commitmentComplete=true so they skip post-lesson flow", () => {
     // Simulate a v1 user: onboarded=true but no v2 fields saved
-    localStorage.setItem("iqra_progress", JSON.stringify({
+    localStorage.setItem("tila_progress", JSON.stringify({
       schemaVersion: 3,
       onboarded: true,
       onboardingIntention: "legacy intention",
@@ -379,7 +379,7 @@ describe("v2 onboarding fields persistence", () => {
   });
 
   it("legacy user migrated via hasCompletedOnboarding key also gets commitmentComplete=true", () => {
-    // User who onboarded via the old loose localStorage key, no iqra_progress onboarding fields
+    // User who onboarded via the old loose localStorage key, no tila_progress onboarding fields
     localStorage.setItem("hasCompletedOnboarding", "true");
     localStorage.setItem("onboardingIntention", "I want to read the Quran confidently");
     localStorage.setItem("onboardingDailyGoal", "5");

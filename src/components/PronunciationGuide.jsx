@@ -53,7 +53,7 @@ const modalVariants = {
 };
 const modalTransition = { type: "spring", stiffness: 380, damping: 32 };
 
-/* Fixed centering wrapper — Framer Motion can't touch this transform */
+/* Fixed centering wrapper */
 const modalWrapperStyle = {
   position: "fixed",
   inset: 0,
@@ -75,49 +75,130 @@ const modalStyle = {
 };
 
 /** Circular audio button */
-function AudioBtn({ letterId, audioType, primary }) {
+function AudioBtn({ letterId, audioType, primary, size = 42 }) {
   return (
     <button
       onClick={(e) => { e.stopPropagation(); playLetterAudio(letterId, audioType); }}
       style={{
         background: primary ? "var(--c-primary)" : "none",
-        border: primary ? "none" : "2px solid var(--c-border)",
-        borderRadius: "50%", width: 38, height: 38, cursor: "pointer",
+        border: primary ? "none" : "2px solid var(--c-accent)",
+        borderRadius: "50%", width: size, height: size, cursor: "pointer",
         display: "flex", alignItems: "center", justifyContent: "center",
         flexShrink: 0, transition: "transform 0.15s",
         WebkitTapHighlightColor: "transparent",
       }}
       aria-label={`Hear letter`}
     >
-      <Icons.Volume size={16} color={primary ? "white" : "var(--c-text-muted)"} />
+      <Icons.Volume size={Math.round(size * 0.43)} color={primary ? "white" : "var(--c-accent)"} />
     </button>
   );
 }
 
-/**
- * Single-letter pronunciation popup.
- * Only renders trigger if letter has articulation data.
- *
- * @param {object} letter - Letter object with articulation data
- * @param {number} [contrastWithId] - When in a contrast lesson, the partner letter's ID.
- *   Overrides the confusion section and second audio button to focus on this specific pair.
- */
-export function PronunciationCard({ letter, audioType = "sound", defaultOpen = false, contrastWithId }) {
-  const [open, setOpen] = useState(defaultOpen);
+/** Pronunciation detail section — renders inline within a modal */
+function PronunciationDetail({ letter, audioType, contrastWithId }) {
   const a = letter.articulation;
   if (!a) return null;
 
   const contrastLetter = contrastWithId ? getLetter(contrastWithId) : null;
   const contrastArticulation = contrastLetter?.articulation;
 
-  // Determine the comparison audio button letter:
-  // If in a contrast lesson, always use the contrast partner.
-  // Otherwise, use the first referenced letter from confusedWith text.
   let comparisonLetterId = contrastWithId || null;
   if (!comparisonLetterId && a.confusedWith) {
     const match = a.confusedWith.match(/\{id:(\d+)\}/);
     if (match) comparisonLetterId = parseInt(match[1], 10);
   }
+
+  return (
+    <>
+      {/* Try This */}
+      <div style={{ background: "var(--c-primary-soft)", borderRadius: 14, padding: "14px 16px", marginBottom: 14 }}>
+        <p style={{ fontSize: 11, fontWeight: 700, color: "var(--c-primary)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Try this</p>
+        <p style={{ fontSize: 14, color: "var(--c-primary-dark)", lineHeight: 1.65 }}>{a.tryThis}</p>
+      </div>
+
+      {/* Placement & manner */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 14 }}>
+        <div>
+          <p style={{ fontSize: 10, fontWeight: 700, color: "var(--c-text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Tongue placement</p>
+          <RichText text={a.place} />
+        </div>
+        <div>
+          <p style={{ fontSize: 10, fontWeight: 700, color: "var(--c-text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>How it sounds</p>
+          <RichText text={a.manner} />
+        </div>
+        <span style={{
+          fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em",
+          padding: "4px 10px", borderRadius: 8, alignSelf: "flex-start",
+          background: a.breath === "voiced" ? "var(--c-accent-light)" : "var(--c-bg)",
+          color: a.breath === "voiced" ? "var(--c-accent)" : "var(--c-text-muted)",
+        }}>
+          {a.breath === "voiced" ? "Voiced (vocal cords vibrate)" : "Unvoiced (no vibration)"}
+        </span>
+      </div>
+
+      {/* Contrast-aware comparison section */}
+      {contrastLetter ? (
+        <div style={{ borderTop: "1px solid var(--c-border)", paddingTop: 12, marginBottom: 16 }}>
+          <p style={{ fontSize: 10, fontWeight: 700, color: "var(--c-accent)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>
+            Compared with {contrastLetter.letter} ({contrastLetter.name})
+          </p>
+          {contrastArticulation ? (
+            <div style={{ background: "var(--c-bg)", borderRadius: 12, padding: "10px 12px", border: "1px solid var(--c-border)" }}>
+              <p style={{ fontSize: 12.5, color: "var(--c-text-soft)", lineHeight: 1.6, marginBottom: 4 }}>
+                <span style={{ fontWeight: 600, color: "var(--c-text)" }}>{contrastLetter.letter} ({contrastLetter.name}):</span> {contrastArticulation.place}
+              </p>
+              <p style={{ fontSize: 12.5, color: "var(--c-text-soft)", lineHeight: 1.6 }}>
+                <span style={{ fontWeight: 600, color: "var(--c-text)" }}>{letter.letter} ({letter.name}):</span> {a.place}
+              </p>
+            </div>
+          ) : (
+            <p style={{ fontSize: 12.5, color: "var(--c-text-soft)", lineHeight: 1.6 }}>
+              {contrastLetter.name} sounds like "{contrastLetter.transliteration}" — {contrastLetter.soundHint}. Compare with {letter.name}: "{letter.transliteration}" — {letter.soundHint}.
+            </p>
+          )}
+        </div>
+      ) : a.confusedWith ? (
+        <div style={{ borderTop: "1px solid var(--c-border)", paddingTop: 12, marginBottom: 16 }}>
+          <p style={{ fontSize: 10, fontWeight: 700, color: "var(--c-accent)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Common confusion</p>
+          <RichText text={a.confusedWith} />
+        </div>
+      ) : null}
+
+      {/* Audio buttons */}
+      <div style={{ display: "flex", gap: 8 }}>
+        <button
+          onClick={() => playLetterAudio(letter.id, audioType)}
+          className="btn btn-primary"
+          style={{ flex: 1, fontSize: 13, padding: "12px 10px" }}
+        >
+          <Icons.Volume size={17} color="white" /> Hear {letter.name}
+        </button>
+        {comparisonLetterId && (() => {
+          const cl = getLetter(comparisonLetterId);
+          if (!cl) return null;
+          return (
+            <button
+              onClick={() => playLetterAudio(comparisonLetterId, audioType)}
+              className="btn btn-outline"
+              style={{ flex: 1, fontSize: 13, padding: "12px 10px", borderColor: "var(--c-border)" }}
+            >
+              <Icons.Volume size={17} color="var(--c-text-muted)" /> Hear {cl.name}
+            </button>
+          );
+        })()}
+      </div>
+    </>
+  );
+}
+
+/**
+ * Trigger button + popup for pronunciation detail.
+ * Used in lesson intros where only letters WITH articulation should show a trigger.
+ */
+export function PronunciationCard({ letter, audioType = "sound", defaultOpen = false, contrastWithId }) {
+  const [open, setOpen] = useState(defaultOpen);
+  const a = letter.articulation;
+  if (!a) return null;
 
   return (
     <>
@@ -164,89 +245,126 @@ export function PronunciationCard({ letter, audioType = "sound", defaultOpen = f
                 </button>
               </div>
 
-              {/* Try This */}
-              <div style={{ background: "var(--c-primary-soft)", borderRadius: 14, padding: "14px 16px", marginBottom: 14 }}>
-                <p style={{ fontSize: 11, fontWeight: 700, color: "var(--c-primary)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Try this</p>
-                <p style={{ fontSize: 14, color: "var(--c-primary-dark)", lineHeight: 1.65 }}>{a.tryThis}</p>
-              </div>
-
-              {/* Placement & manner */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 14 }}>
-                <div>
-                  <p style={{ fontSize: 10, fontWeight: 700, color: "var(--c-text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Tongue placement</p>
-                  <RichText text={a.place} />
-                </div>
-                <div>
-                  <p style={{ fontSize: 10, fontWeight: 700, color: "var(--c-text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>How it sounds</p>
-                  <RichText text={a.manner} />
-                </div>
-                <span style={{
-                  fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em",
-                  padding: "4px 10px", borderRadius: 8, alignSelf: "flex-start",
-                  background: a.breath === "voiced" ? "var(--c-accent-light)" : "var(--c-bg)",
-                  color: a.breath === "voiced" ? "var(--c-accent)" : "var(--c-text-muted)",
-                }}>
-                  {a.breath === "voiced" ? "Voiced (vocal cords vibrate)" : "Unvoiced (no vibration)"}
-                </span>
-              </div>
-
-              {/* Contrast-aware comparison section */}
-              {contrastLetter ? (
-                <div style={{ borderTop: "1px solid var(--c-border)", paddingTop: 12, marginBottom: 16 }}>
-                  <p style={{ fontSize: 10, fontWeight: 700, color: "var(--c-accent)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>
-                    Compared with {contrastLetter.letter} ({contrastLetter.name})
-                  </p>
-                  {contrastArticulation ? (
-                    <div style={{ background: "var(--c-bg)", borderRadius: 12, padding: "10px 12px", border: "1px solid var(--c-border)" }}>
-                      <p style={{ fontSize: 12.5, color: "var(--c-text-soft)", lineHeight: 1.6, marginBottom: 4 }}>
-                        <span style={{ fontWeight: 600, color: "var(--c-text)" }}>{contrastLetter.letter} ({contrastLetter.name}):</span> {contrastArticulation.place}
-                      </p>
-                      <p style={{ fontSize: 12.5, color: "var(--c-text-soft)", lineHeight: 1.6 }}>
-                        <span style={{ fontWeight: 600, color: "var(--c-text)" }}>{letter.letter} ({letter.name}):</span> {a.place}
-                      </p>
-                    </div>
-                  ) : (
-                    <p style={{ fontSize: 12.5, color: "var(--c-text-soft)", lineHeight: 1.6 }}>
-                      {contrastLetter.name} sounds like "{contrastLetter.transliteration}" — {contrastLetter.soundHint}. Compare with {letter.name}: "{letter.transliteration}" — {letter.soundHint}.
-                    </p>
-                  )}
-                </div>
-              ) : a.confusedWith ? (
-                <div style={{ borderTop: "1px solid var(--c-border)", paddingTop: 12, marginBottom: 16 }}>
-                  <p style={{ fontSize: 10, fontWeight: 700, color: "var(--c-accent)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Common confusion</p>
-                  <RichText text={a.confusedWith} />
-                </div>
-              ) : null}
-
-              {/* Audio buttons — this letter + comparison letter */}
-              <div style={{ display: "flex", gap: 8 }}>
-                <button
-                  onClick={() => playLetterAudio(letter.id, audioType)}
-                  className="btn btn-primary"
-                  style={{ flex: 1, fontSize: 13, padding: "12px 10px" }}
-                >
-                  <Icons.Volume size={15} color="white" /> Hear {letter.name}
-                </button>
-                {comparisonLetterId && (() => {
-                  const cl = getLetter(comparisonLetterId);
-                  if (!cl) return null;
-                  return (
-                    <button
-                      onClick={() => playLetterAudio(comparisonLetterId, audioType)}
-                      className="btn btn-outline"
-                      style={{ flex: 1, fontSize: 13, padding: "12px 10px", borderColor: "var(--c-border)" }}
-                    >
-                      <Icons.Volume size={15} color="var(--c-text-muted)" /> Hear {cl.name}
-                    </button>
-                  );
-                })()}
-              </div>
+              <PronunciationDetail letter={letter} audioType={audioType} contrastWithId={contrastWithId} />
             </motion.div>
             </div>
           </>
         )}
       </AnimatePresence>
     </>
+  );
+}
+
+/**
+ * Full letter detail modal — used by ProgressScreen.
+ * Shows letter info, stats, tip, and pronunciation guide (if available).
+ * Same modal experience for ALL letters — consistent interaction.
+ */
+export function LetterDetailModal({ letter, progress, isOpen, onClose }) {
+  if (!letter || !isOpen) return null;
+
+  const stats = progress?.[letter.id];
+  const hasStats = stats && stats.attempts > 0;
+  const accuracy = hasStats ? Math.round((stats.correct / stats.attempts) * 100) : null;
+  const a = letter.articulation;
+
+  // Find comparison letter for audio buttons
+  let comparisonLetterId = null;
+  if (a?.confusedWith) {
+    const match = a.confusedWith.match(/\{id:(\d+)\}/);
+    if (match) comparisonLetterId = parseInt(match[1], 10);
+  }
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          <Overlay onClick={onClose} />
+          <div style={modalWrapperStyle}>
+            <motion.div
+              variants={modalVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={modalTransition}
+              style={modalStyle}
+            >
+              {/* Header */}
+              <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 16 }}>
+                <div style={{
+                  width: 56, height: 56, borderRadius: "50%", background: "var(--c-primary-soft)",
+                  border: "2px solid var(--c-primary)", display: "flex", alignItems: "center", justifyContent: "center",
+                  flexShrink: 0,
+                }}>
+                  <span style={{ fontFamily: "var(--font-arabic)", fontSize: 32, color: "var(--c-primary-dark)", lineHeight: 1, marginTop: 4 }} dir="rtl">{letter.letter}</span>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: "var(--c-text)" }}>{letter.name}</div>
+                  <div style={{ fontSize: 12, color: "var(--c-accent)", fontWeight: 600 }}>"{letter.transliteration}" — {letter.soundHint}</div>
+                </div>
+                <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, flexShrink: 0 }}>
+                  <Icons.X size={20} color="var(--c-text-muted)" />
+                </button>
+              </div>
+
+              {/* Tip */}
+              <p style={{ fontSize: 14, color: "var(--c-text-soft)", lineHeight: 1.6, marginBottom: 14 }}>{letter.tip}</p>
+
+              {/* Stats */}
+              {hasStats && (
+                <div style={{
+                  display: "flex", gap: 16, marginBottom: 16, padding: "10px 14px",
+                  background: "var(--c-bg)", borderRadius: 12, border: "1px solid var(--c-border)",
+                }}>
+                  <div style={{ fontSize: 12, color: "var(--c-text-muted)" }}>
+                    <span style={{ fontWeight: 700, color: "var(--c-primary)", fontSize: 16 }}>{stats.correct}</span>
+                    <span>/{stats.attempts} correct</span>
+                  </div>
+                  <div style={{ fontSize: 12, color: "var(--c-text-muted)" }}>
+                    <span style={{ fontWeight: 700, color: accuracy >= 80 ? "var(--c-primary)" : accuracy >= 50 ? "var(--c-accent)" : "var(--c-danger)", fontSize: 16 }}>{accuracy}%</span>
+                    <span> accuracy</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Audio buttons — always present */}
+              {!a && (
+                <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+                  <button
+                    onClick={() => playLetterAudio(letter.id, "name")}
+                    className="btn btn-outline"
+                    style={{ flex: 1, fontSize: 13, padding: "12px 10px", borderColor: "var(--c-border)" }}
+                  >
+                    <Icons.Volume size={17} color="var(--c-primary)" /> Hear name
+                  </button>
+                  <button
+                    onClick={() => playLetterAudio(letter.id, "sound")}
+                    className="btn btn-primary"
+                    style={{ flex: 1, fontSize: 13, padding: "12px 10px" }}
+                  >
+                    <Icons.Volume size={17} color="white" /> Hear sound
+                  </button>
+                </div>
+              )}
+
+              {/* Pronunciation guide — renders inline for letters with articulation */}
+              {a && <PronunciationDetail letter={letter} audioType="sound" />}
+
+              {/* Visual rule */}
+              <div style={{
+                display: "flex", alignItems: "center", gap: 8, marginTop: a ? 16 : 0,
+                padding: "8px 12px", background: "var(--c-bg)", borderRadius: 10,
+                border: "1px solid var(--c-border)",
+              }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: "var(--c-text-muted)", textTransform: "uppercase", letterSpacing: "0.04em" }}>Visual</span>
+                <span style={{ fontSize: 12, color: "var(--c-text-soft)" }}>{letter.visualRule}</span>
+                <span style={{ fontSize: 11, color: "var(--c-text-muted)", marginLeft: "auto" }}>Family: {letter.family}</span>
+              </div>
+            </motion.div>
+          </div>
+        </>
+      )}
+    </AnimatePresence>
   );
 }
 

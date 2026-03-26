@@ -102,6 +102,8 @@ export async function playGeneratedArabicAudio(text) {
 
     audio.addEventListener("ended", () => {
       if (currentAudio === audio) currentAudio = null;
+      URL.revokeObjectURL(blobUrl);
+      audioCache.delete(normalizedText);
     });
     audio.addEventListener("error", () => {
       console.error("[TTS] audio element error:", audio.error?.message);

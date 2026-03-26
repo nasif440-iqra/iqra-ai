@@ -171,3 +171,72 @@ describe("getLastCompletedLesson", () => {
     expect(result.id).toBe(44);
   });
 });
+
+// ── Fix 4: Combo review support ──
+
+import { extractReviewItems, buildReviewLessonPayload } from "../lib/selectors.js";
+
+describe("extractReviewItems", () => {
+  it("separates letter and combo entity keys", () => {
+    const items = ["letter:2", "combo:ba-fatha", "letter:5", "combo:ta-kasra"];
+    const { letterIds, comboIds } = extractReviewItems(items);
+    expect(letterIds).toEqual([2, 5]);
+    expect(comboIds).toEqual(["ba-fatha", "ta-kasra"]);
+  });
+
+  it("handles empty input", () => {
+    const { letterIds, comboIds } = extractReviewItems([]);
+    expect(letterIds).toEqual([]);
+    expect(comboIds).toEqual([]);
+  });
+
+  it("handles only letters", () => {
+    const { letterIds, comboIds } = extractReviewItems(["letter:1", "letter:3"]);
+    expect(letterIds).toEqual([1, 3]);
+    expect(comboIds).toEqual([]);
+  });
+
+  it("handles only combos", () => {
+    const { letterIds, comboIds } = extractReviewItems(["combo:ba-fatha"]);
+    expect(letterIds).toEqual([]);
+    expect(comboIds).toEqual(["ba-fatha"]);
+  });
+});
+
+describe("buildReviewLessonPayload — combo support", () => {
+
+  it("includes teachCombos when combo entities are due", () => {
+    const mastery = {
+      entities: {
+        "combo:ba-fatha": { correct: 1, attempts: 3, lastSeen: "2026-03-20", nextReview: "2026-03-20", intervalDays: 1, sessionStreak: 0 },
+        "letter:2": { correct: 2, attempts: 3, lastSeen: "2026-03-20", nextReview: "2026-03-20", intervalDays: 1, sessionStreak: 0 },
+      },
+      skills: {},
+      confusions: {},
+    };
+    const result = buildReviewLessonPayload(mastery, [1, 2, 3], "2026-03-25");
+    expect(result).not.toBeNull();
+    expect(result.teachIds).toContain(2);
+    expect(result.teachCombos).toBeDefined();
+    expect(result.teachCombos).toContain("ba-fatha");
+  });
+
+  it("returns non-null when only combo entities are due", () => {
+    const mastery = {
+      entities: {
+        "combo:ba-fatha": { correct: 0, attempts: 3, lastSeen: "2026-03-20", nextReview: "2026-03-20", intervalDays: 1, sessionStreak: 0 },
+      },
+      skills: {},
+      confusions: {},
+    };
+    const result = buildReviewLessonPayload(mastery, [1, 2, 3], "2026-03-25");
+    expect(result).not.toBeNull();
+    expect(result.teachCombos).toContain("ba-fatha");
+  });
+
+  it("returns null when nothing is reviewable", () => {
+    const mastery = { entities: {}, skills: {}, confusions: {} };
+    const result = buildReviewLessonPayload(mastery, [], "2026-03-25");
+    expect(result).toBeNull();
+  });
+});

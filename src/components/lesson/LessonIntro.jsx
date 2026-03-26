@@ -70,7 +70,7 @@ export default function LessonIntro({ lesson, teachLetters, lessonCombos, isSoun
             {displayCombos.map(c => (
               <div key={c.id} style={{ textAlign: "center", cursor: "pointer" }} onClick={() => playGeneratedArabicAudio(c.audioText)}>
                 <span style={{ fontFamily: "var(--font-arabic)", fontSize: 48, lineHeight: 1.6, color: "var(--c-primary-dark)", display: "block" }}>{c.display}</span>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--c-accent)", marginTop: 2 }}><Icons.Volume size={12} color="var(--c-accent)" /> {"\u201C"}{c.sound}{"\u201D"}</div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, marginTop: 4 }}><Icons.Volume size={14} color="var(--c-accent)" /><span style={{ fontSize: 13, fontWeight: 700, color: "var(--c-accent)" }}>{"\u201C"}{c.sound}{"\u201D"}</span></div>
               </div>
             ))}
           </div>
@@ -83,7 +83,14 @@ export default function LessonIntro({ lesson, teachLetters, lessonCombos, isSoun
     );
   }
 
-  // Default: recognition / sound / contrast intro
+  // Default: recognition / sound / contrast / checkpoint intro
+  const isCheckpoint = lesson.lessonMode === "checkpoint";
+  // All lesson intros support tapping letters to hear them
+  const hasAudio = true;
+  const isLargeGrid = teachLetters.length > 6;
+  const circleSize = isLargeGrid ? 52 : teachLetters.length > 2 ? 80 : 112;
+  const fontSize = isLargeGrid ? 28 : teachLetters.length > 2 ? 40 : 56;
+
   return (
     <div className="screen" style={{ background: "var(--c-bg)" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
@@ -91,30 +98,60 @@ export default function LessonIntro({ lesson, teachLetters, lessonCombos, isSoun
         <div style={{ flex: 1, textAlign: "center" }}><span style={{ fontFamily: "var(--font-heading)", fontSize: 14, fontWeight: 500, color: "var(--c-text-muted)" }}>{lesson.title}</span></div>
         <div style={{ width: 30 }} />
       </div>
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center" }}>
-        {(isSound || isContrast) && <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "var(--c-accent-light)", padding: "5px 14px", borderRadius: 16, marginBottom: 16 }}>
-          <span style={{ fontSize: 12, fontWeight: 700, color: "var(--c-accent)" }}>{isContrast ? "\uD83D\uDD0A Sound Contrast \u2014 hear the difference" : "\uD83D\uDD0A Listening Lesson \u2014 learn how these sound"}</span>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: isLargeGrid ? "flex-start" : "center", alignItems: "center", overflowY: isLargeGrid ? "auto" : "visible", paddingTop: isLargeGrid ? 8 : 0 }}>
+        {(isSound || isContrast || isCheckpoint) && <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "var(--c-accent-light)", padding: "5px 14px", borderRadius: 16, marginBottom: 16 }}>
+          <span style={{ fontSize: 12, fontWeight: 700, color: "var(--c-accent)" }}>{isContrast ? "\uD83D\uDD0A Sound Contrast \u2014 hear the difference" : isCheckpoint ? "\uD83D\uDD0A Sound Review \u2014 tap each letter to hear it" : "\uD83D\uDD0A Listening Lesson \u2014 learn how these sound"}</span>
         </div>}
-        <motion.div initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 260, damping: 18, delay: 0.1 }} style={{ display: "flex", gap: teachLetters.length > 2 ? 16 : 24, justifyContent: "center", marginBottom: 20, flexWrap: "wrap" }}>
+        <motion.div
+          initial={{ scale: 0.6, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 260, damping: 18, delay: 0.1 }}
+          style={{
+            display: "flex",
+            gap: isLargeGrid ? 10 : teachLetters.length > 2 ? 16 : 24,
+            justifyContent: "center",
+            marginBottom: 20,
+            flexWrap: "wrap",
+            maxWidth: isLargeGrid ? 360 : undefined,
+          }}
+        >
           {teachLetters.map(l => (
-            <div key={l.id} style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center" }}>
-              <div style={{ width: teachLetters.length > 2 ? 80 : 112, height: teachLetters.length > 2 ? 80 : 112, borderRadius: "50%", background: "#F2F5F3", border: "2px solid white", boxShadow: "inset 0 2px 6px rgba(0,0,0,0.06)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 8 }}>
-                <span style={{ fontFamily: "var(--font-arabic)", fontSize: teachLetters.length > 2 ? 40 : 56, lineHeight: 1, color: "var(--c-text)", marginTop: 4 }} dir="rtl">{l.letter}</span>
+            <div
+              key={l.id}
+              style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", cursor: hasAudio ? "pointer" : "default" }}
+              onClick={hasAudio ? () => playLetterAudio(l.id, audioType) : undefined}
+            >
+              <div style={{
+                width: circleSize, height: circleSize, borderRadius: "50%",
+                background: "#F2F5F3", border: "2px solid white",
+                boxShadow: "inset 0 2px 6px rgba(0,0,0,0.06)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                marginBottom: isLargeGrid ? 4 : 8,
+              }}>
+                <span style={{ fontFamily: "var(--font-arabic)", fontSize, lineHeight: 1, color: "var(--c-text)", marginTop: isLargeGrid ? 2 : 4 }} dir="rtl">{l.letter}</span>
               </div>
-              <div style={{ fontSize: 13, fontWeight: 600, marginTop: 2 }}>{l.name}</div>
-              {(isSound || isContrast) ? (<div style={{ fontSize: 11, fontWeight: 500, color: "var(--c-accent)", marginTop: 2 }}>"{l.transliteration}" {"\u2014"} {l.soundHint}</div>) : (<div style={{ display: "inline-flex", background: "var(--c-primary-soft)", padding: "2px 8px", borderRadius: 10, marginTop: 4 }}><span style={{ fontSize: 10, fontWeight: 700, color: "var(--c-primary)" }}>{l.visualRule}</span></div>)}
+              <div style={{ fontSize: isLargeGrid ? 10 : 13, fontWeight: 600, marginTop: 2 }}>{l.name}</div>
+              {!(isSound || isContrast || isCheckpoint) && (
+                <div style={{ display: "inline-flex", background: "var(--c-primary-soft)", padding: "2px 8px", borderRadius: 10, marginTop: 3 }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: "var(--c-primary)" }}>{l.visualRule}</span>
+                </div>
+              )}
+              <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 4 }}>
+                <Icons.Volume size={isLargeGrid ? 12 : 14} color="var(--c-accent)" />
+                <span style={{ fontSize: isLargeGrid ? 10 : 12, fontWeight: 600, color: "var(--c-accent)" }}>
+                  {(isSound || isContrast || isCheckpoint)
+                    ? (isLargeGrid ? l.transliteration : `"${l.transliteration}"`)
+                    : l.name}
+                </span>
+              </div>
             </div>
           ))}
         </motion.div>
         {lesson.familyRule && <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.4 }} style={{ fontSize: 13, color: "var(--c-text-soft)", lineHeight: 1.5, maxWidth: 300, textAlign: "center", marginTop: 4 }}>{lesson.familyRule}</motion.p>}
-        <div style={{ display: "flex", gap: 8, marginTop: 16, flexWrap: "wrap", justifyContent: "center" }}>
-          {teachLetters.map(l => (<button key={l.id} className="btn btn-outline" onClick={() => playLetterAudio(l.id, audioType)} style={{ width: "auto", padding: "8px 14px", fontSize: 12 }}><Icons.Volume size={14} color="var(--c-primary)" /> {(isSound || isContrast) ? `"${l.transliteration}"` : l.name}</button>))}
-        </div>
         {/* Pronunciation guides for letters that have articulation data */}
         {(isSound || isContrast) && teachLetters.some(l => l.articulation) && (
           <div style={{ width: "100%", maxWidth: 340, display: "flex", flexDirection: "column", gap: 8, marginTop: 20 }}>
             {teachLetters.filter(l => l.articulation).map(l => {
-              // In contrast lessons, pass the other letter as the comparison partner
               const contrastWithId = isContrast
                 ? (teachLetters.find(o => o.id !== l.id)?.id || null)
                 : null;
@@ -126,7 +163,7 @@ export default function LessonIntro({ lesson, teachLetters, lessonCombos, isSoun
         )}
       </div>
       <div style={{ paddingBottom: 24 }}>
-        <button className="btn btn-primary" onClick={() => { sfxLessonStart(); onStartQuiz(); }}>{isContrast ? "Start comparing" : isSound ? "Start listening" : "Let's practice"}</button>
+        <button className="btn btn-primary" onClick={() => { sfxLessonStart(); onStartQuiz(); }}>{isContrast ? "Start comparing" : hasAudio ? "Start listening" : "Let's practice"}</button>
       </div>
     </div>
   );

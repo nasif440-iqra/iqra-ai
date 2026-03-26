@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { sfxCorrect, sfxWrong, sfxComplete, sfxCompletePerfect, playLetterAudio, sfxStreakTier1, sfxStreakTier2, sfxStreakTier3 } from "../../lib/audio.js";
+import { sfxCorrect, sfxWrong, sfxComplete, sfxCompletePerfect, sfxLessonIncomplete, playLetterAudio, sfxStreakTier1, sfxStreakTier2, sfxStreakTier3 } from "../../lib/audio.js";
 import { playGeneratedArabicAudio } from "../../lib/tts.js";
 import { generateLessonQuestions, getWrongExplanation, getContrastExplanation, getHarakatWrongExplanation, pickRandom, shuffle } from "../../lib/questions/index.js";
 import { normalizeEntityKey, deriveSkillKeysFromQuestion } from "../../lib/mastery.js";
@@ -125,6 +125,7 @@ export default function useLessonQuiz({ lesson, progress, lessonsCompleted, isCo
       const qPct = qT > 0 ? Math.round((qC / qT) * 100) : 0;
       if (qPct === 100) sfxCompletePerfect();
       else if (qPct >= 60) sfxComplete();
+      else sfxLessonIncomplete();
       setPhase("summary");
     }
   }, [qIndex, questions.length, midPoint, midShown, quizResults, setPhase]);

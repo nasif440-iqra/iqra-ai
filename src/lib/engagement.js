@@ -1,6 +1,6 @@
 /**
  * Engagement Layer — centralized microcopy, companion motif helpers,
- * and progression psychology utilities for Iqra AI.
+ * and progression psychology utilities for Tila.
  *
  * All copy is production-quality, calm, premium, and spiritually aligned.
  * No slang, no childish praise, no arcade language.
@@ -139,7 +139,7 @@ export const CLOSING_QUOTES = [
   "The one who reads the Quran beautifully will be with noble angels.",
   "Every letter learned is a step on a beautiful path.",
   "Seeking knowledge is an obligation upon every Muslim.",
-  "Read, in the name of your Lord who created.",
+  "Recite the Quran, for it will come as an intercessor for its companions on the Day of Resurrection.",
   "The best among you are those who learn the Quran and teach it.",
   "He who does not give up hope in His mercy is truly blessed.",
 ];

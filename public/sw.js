@@ -1,5 +1,6 @@
-// Iqra AI Service Worker — offline-first caching
-const CACHE_NAME = "iqra-v1";
+// Tila Service Worker — offline-first caching
+const CACHE_VERSION = 2;
+const CACHE_NAME = `tila-v${CACHE_VERSION}`;
 
 // Core app shell files cached on install
 const APP_SHELL = [

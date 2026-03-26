@@ -59,14 +59,28 @@ export default function HomeScreen({ progress, mastery, completedLessonIds, less
 
   /* ── find the current (next uncompleted + unlocked) lesson ── */
   const currentLesson = getCurrentUnlockedLesson(completedLessonIds);
-  const currentIdx = LESSONS.findIndex(l => l.id === currentLesson.id);
-  const heroLetters = (currentLesson.teachIds || []).map(id => getLetter(id)).filter(Boolean);
+  const allDone = !currentLesson || completedLessonIds.length >= LESSONS.length;
+  const currentIdx = currentLesson ? LESSONS.findIndex(l => l.id === currentLesson.id) : LESSONS.length - 1;
+  const heroLetters = currentLesson ? (currentLesson.teachIds || []).map(id => getLetter(id)).filter(Boolean) : [];
   const heroLetter = heroLetters[0];
-  const allDone = completedLessonIds.length >= LESSONS.length;
 
-  /* ── windowed view: show ~8 lessons around current ── */
-  const windowStart = Math.max(0, currentIdx - 3);
-  const windowEnd = Math.min(LESSONS.length, currentIdx + 5);
+  /* ── windowed view: all completed + current + up to 4 locked preview ── */
+  const windowStart = 0;
+  let lockedCount = 0;
+  let windowEnd = 0;
+  for (let i = 0; i < LESSONS.length; i++) {
+    const l = LESSONS[i];
+    const done = completedLessonIds.includes(l.id);
+    const isCurrent = l.id === currentLesson.id;
+    if (done || isCurrent) {
+      windowEnd = i + 1;
+      lockedCount = 0;
+    } else {
+      lockedCount++;
+      windowEnd = i + 1;
+      if (lockedCount >= 4) break;
+    }
+  }
   const windowLessons = LESSONS.slice(windowStart, windowEnd);
 
   /* ── phase labels to inject ── */
@@ -81,7 +95,7 @@ export default function HomeScreen({ progress, mastery, completedLessonIds, less
 
         {/* ── Header ── */}
         <div className="fade-up" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-          <h1 style={{ fontFamily: "var(--font-heading)", fontSize: 24, fontWeight: 700, letterSpacing: "-0.01em", color: "var(--c-text)" }}>Iqra</h1>
+          <h1 style={{ fontFamily: "var(--font-heading)", fontSize: 24, fontWeight: 700, letterSpacing: "-0.01em", color: "var(--c-text)" }}>Tila</h1>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             {/* Daily goal */}
             {dailyGoalNum > 0 && (
@@ -367,15 +381,6 @@ export default function HomeScreen({ progress, mastery, completedLessonIds, less
             })}
           </div>
         </div>
-
-        {/* ── Show more link ── */}
-        {windowEnd < LESSONS.length && (
-          <div className="fade-up" style={{ textAlign: "center", paddingBottom: 16 }}>
-            <span style={{ fontSize: 12, fontWeight: 600, color: "var(--c-text-muted)" }}>
-              {LESSONS.length - windowEnd} more lessons ahead
-            </span>
-          </div>
-        )}
 
       </div>
     </div>

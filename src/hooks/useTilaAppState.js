@@ -1,10 +1,12 @@
 import { useState, useCallback, useEffect, useMemo } from "react";
+import { LESSONS } from "../data/lessons.js";
 import { loadProgress, saveProgress, recalculateWirdOnAppOpen, recordPractice, getTodayDateString, getDayDifference, getCompletedPhaseIntercept, buildLegacyProgressView } from "../lib/progress.js";
 import { mergeQuizResultsIntoMastery } from "../lib/mastery.js";
 import { getLessonsCompletedCount, getLastCompletedLesson } from "../lib/selectors.js";
+import { evaluateLessonOutcome } from "../lib/outcome.js";
 import { sfxWirdMilestone } from "../lib/audio.js";
 
-export default function useIqraAppState() {
+export default function useTilaAppState() {
   // Load and normalize progress on mount (lazy initializer — safe in StrictMode)
   const [saved] = useState(() => {
     const raw = loadProgress();
@@ -60,6 +62,7 @@ export default function useIqraAppState() {
     onboardingMotivation: saved.onboardingMotivation,
     onboardingCommitmentComplete: saved.onboardingCommitmentComplete,
     onboardingVersion: saved.onboardingVersion,
+    wirdIntroSeen: saved.wirdIntroSeen,
   });
 
   const hasCompletedOnboarding = onboardingData.onboarded;
@@ -79,6 +82,7 @@ export default function useIqraAppState() {
       onboardingMotivation: onboardingData.onboardingMotivation,
       onboardingCommitmentComplete: onboardingData.onboardingCommitmentComplete,
       onboardingVersion: onboardingData.onboardingVersion,
+      wirdIntroSeen: onboardingData.wirdIntroSeen,
       completedLessonIds,
       mastery,
       habit,
@@ -86,30 +90,52 @@ export default function useIqraAppState() {
     if (!ok && !saveFailed) setSaveFailed(true);
   }, [onboardingData, mastery, completedLessonIds, habit]);
 
+  /**
+   * Handle lesson completion — FIX 1 + FIX 2.
+   *
+   * 1. Evaluate outcome (pass/fail) from quiz results.
+   * 2. Compute next completedLessonIds BEFORE committing state (React-safe).
+   * 3. Compute phase intercept deterministically from prev → next IDs.
+   * 4. Commit all state.
+   * 5. Return structured result — no closure mutation hacks.
+   */
   const handleLessonComplete = useCallback((lessonId, quizResults, speakResults) => {
-    let hasPhaseIntercept = false;
+    // Derive lesson mode from the actual lesson definition — not from quiz result heuristics
+    const lesson = typeof lessonId === "number"
+      ? LESSONS.find(l => l.id === lessonId)
+      : null;
+    const lessonMode = lesson?.lessonMode
+      || (typeof lessonId === "string" ? lessonId : "recognition");
 
-    // Only track numeric lesson IDs in completedLessonIds (skip "review" etc.)
-    if (typeof lessonId === "number") {
+    const outcome = evaluateLessonOutcome(quizResults, lessonMode);
+    let phaseIntercept = null;
+
+    // Only mark as completed if passed AND is a progression lesson (numeric ID)
+    if (outcome.passed && typeof lessonId === "number") {
+      // Read current IDs synchronously from state (this runs inside an event handler,
+      // so the closure value is the latest committed state).
       setCompletedLessonIds(prev => {
-        const newIds = prev.includes(lessonId) ? prev : [...prev, lessonId];
-
-        if (!prev.includes(lessonId)) {
-          const intercept = getCompletedPhaseIntercept(prev, newIds);
-          if (intercept) {
-            hasPhaseIntercept = true;
-            setPhaseCompleteData(intercept);
-          }
-        }
-
-        return newIds;
+        if (prev.includes(lessonId)) return prev;
+        return [...prev, lessonId];
       });
+
+      // Compute phase intercept deterministically from prev → next
+      // (reads completedLessonIds from the closure — guaranteed current in event handler)
+      const prevIds = completedLessonIds;
+      if (!prevIds.includes(lessonId)) {
+        const nextIds = [...prevIds, lessonId];
+        phaseIntercept = getCompletedPhaseIntercept(prevIds, nextIds);
+        if (phaseIntercept) {
+          setPhaseCompleteData(phaseIntercept);
+        }
+      }
     }
 
-    // Merge quiz results into mastery (entities, skills, confusions + SRS)
+    // Always merge quiz results into mastery (even on fail — SRS needs this)
     const today = getTodayDateString();
     setMastery(prev => mergeQuizResultsIntoMastery(prev, quizResults, today));
 
+    // Always record practice (even on fail — habit tracking)
     setHabit(prev => {
       const next = recordPractice(prev);
       if (next.currentWird > prev.currentWird) {
@@ -118,8 +144,8 @@ export default function useIqraAppState() {
       return next;
     });
 
-    return hasPhaseIntercept;
-  }, []);
+    return { passed: outcome.passed, phaseIntercept, outcome };
+  }, [completedLessonIds]);
 
   const handlePhaseCompleteContinue = useCallback(() => {
     setPhaseCompleteData(null);
@@ -136,6 +162,14 @@ export default function useIqraAppState() {
       onboarded: true,
       onboardingStartingPoint: startingPoint,
       onboardingVersion: 2,
+    }));
+  }, []);
+
+  // Wird introduction complete: mark as seen
+  const handleWirdIntroComplete = useCallback(() => {
+    setOnboardingData(prev => ({
+      ...prev,
+      wirdIntroSeen: true,
     }));
   }, []);
 
@@ -166,6 +200,7 @@ export default function useIqraAppState() {
     handlePhaseCompleteContinue,
     handleDismissHadith,
     handleOnboardingComplete,
+    handleWirdIntroComplete,
     handlePostLessonOnboardingComplete,
   };
 }
