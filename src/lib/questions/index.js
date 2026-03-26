@@ -12,6 +12,8 @@ import { generateHarakatIntroQs, generateHarakatQs } from "./harakat.js";
 import { generateCheckpointQs } from "./checkpoint.js";
 import { generateReviewQs } from "./review.js";
 import { filterValidQuestions } from "./shared.js";
+import { generateConnectedFormExercises } from "./connectedForms.js";
+import { generateConnectedReadingExercises } from "./connectedReading.js";
 
 export function generateLessonQuestions(lesson, progress) {
   let qs;
@@ -24,4 +26,15 @@ export function generateLessonQuestions(lesson, progress) {
 
   // Safeguard: validate every question, replace failures with fallbacks
   return filterValidQuestions(qs, lesson);
+}
+
+/**
+ * Generate exercises for hybrid (Phase 4+) lessons.
+ * These return exercise objects (not quiz questions) for the hybrid lesson framework.
+ * Falls back to standard question generation for non-hybrid modes.
+ */
+export function generateHybridExercises(lesson, progress) {
+  if (lesson.lessonMode === "connected-forms") return generateConnectedFormExercises(lesson);
+  if (lesson.lessonMode === "connected-reading") return generateConnectedReadingExercises(lesson);
+  return generateLessonQuestions(lesson, progress);
 }

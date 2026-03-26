@@ -11,6 +11,9 @@ import LessonQuiz from "./LessonQuiz.jsx";
 import LessonMidCelebrate from "./LessonMidCelebrate.jsx";
 import LessonSummary from "./LessonSummary.jsx";
 import LessonSpeak from "./LessonSpeak.jsx";
+import LessonErrorBoundary from "./LessonErrorBoundary.jsx";
+import LessonHybrid from "./LessonHybrid.jsx";
+import { generateHybridExercises } from "../../lib/questions/index.js";
 
 export default function LessonScreen({ lessonId, lessonOverride, progress, completedLessonIds, lessonsCompleted, onComplete, onRetry, onBack, skipIntro }) {
   const lesson = lessonOverride || LESSONS.find(l => l.id === lessonId);
@@ -18,6 +21,26 @@ export default function LessonScreen({ lessonId, lessonOverride, progress, compl
     return <div style={{ padding: 40, textAlign: "center" }}><p>Lesson not found.</p><button className="btn btn-primary" onClick={onBack}>Go Back</button></div>;
   }
   const teachLetters = (lesson.teachIds || []).map(id => getLetter(id)).filter(Boolean);
+
+  // Phase 4+ hybrid lessons use the new three-stage framework
+  if (lesson.lessonType === "hybrid") {
+    const exercises = generateHybridExercises(lesson, progress);
+    return (
+      <LessonErrorBoundary onBack={onBack}>
+        <LessonHybrid
+          lesson={lesson}
+          exercises={exercises}
+          progress={progress}
+          completedLessonIds={completedLessonIds}
+          lessonsCompleted={lessonsCompleted}
+          onComplete={onComplete}
+          onRetry={onRetry}
+          onBack={onBack}
+        />
+      </LessonErrorBoundary>
+    );
+  }
+
   const isSound = lesson.lessonMode === "sound";
   const isContrast = lesson.lessonMode === "contrast";
   const isHarakatIntro = lesson.lessonMode === "harakat-intro";
