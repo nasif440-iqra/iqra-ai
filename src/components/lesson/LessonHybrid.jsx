@@ -61,6 +61,18 @@ function ComprehensionExercise({ exercise, onComplete }) {
   const [isCorrect, setIsCorrect] = useState(null);
   const { prompt, displayArabic, options = [], targetId } = exercise;
 
+  // Detect if options contain Arabic text (unicode range check or optionMode)
+  const hasArabicOptions = options.some(o => o.label && /[\u0600-\u06FF\uFE70-\uFEFF]/.test(o.label));
+  const optCount = options.length;
+  const isCompact = optCount <= 2;
+  const isTriple = optCount === 3;
+  const gridStyle = isCompact
+    ? { display: "flex", flexDirection: "column", gap: 16, width: "100%", maxWidth: 340 }
+    : isTriple
+      ? { display: "flex", flexWrap: "wrap", gap: 14, width: "100%", maxWidth: 340, justifyContent: "center" }
+      : { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, width: "100%", maxWidth: 340 };
+  const optMinHeight = hasArabicOptions ? 90 : 60;
+
   const handleSelect = useCallback((option) => {
     if (answered) return;
     const correct = option.isCorrect === true;
@@ -119,7 +131,7 @@ function ComprehensionExercise({ exercise, onComplete }) {
         variants={{ show: { transition: { staggerChildren: 0.07 } } }}
         initial="hidden"
         animate="show"
-        style={{ display: "flex", flexDirection: "column", gap: 10, width: "100%" }}
+        style={gridStyle}
       >
         {options.map((option) => {
           let cls = "quiz-option";
@@ -131,6 +143,7 @@ function ComprehensionExercise({ exercise, onComplete }) {
           }
           const isSelectedCorrect = answered && option.id === selectedId && isCorrect;
           const isSelectedWrong = answered && option.id === selectedId && !isCorrect;
+          const isOptionArabic = option.label && /[\u0600-\u06FF\uFE70-\uFEFF]/.test(option.label);
           return (
             <motion.button
               key={option.id}
@@ -152,9 +165,15 @@ function ComprehensionExercise({ exercise, onComplete }) {
               className={cls}
               onClick={() => handleSelect(option)}
               disabled={answered}
-              style={{ width: "100%", textAlign: "center", position: "relative" }}
+              style={{ textAlign: "center", position: "relative", minHeight: optMinHeight, padding: isOptionArabic ? "20px 12px" : "18px 12px", ...(isTriple ? { width: "calc(50% - 7px)", flexShrink: 0 } : {}) }}
             >
-              <span style={{ fontSize: 17, fontWeight: 700 }}>{option.label}</span>
+              <span style={{
+                fontFamily: isOptionArabic ? "var(--font-arabic)" : "var(--font-body)",
+                fontSize: isOptionArabic ? 48 : 17,
+                fontWeight: isOptionArabic ? 400 : 700,
+                lineHeight: isOptionArabic ? 1.5 : 1,
+                color: (answered && option.isCorrect) ? "var(--c-primary-dark)" : (answered && option.id === selectedId && !isCorrect) ? "var(--c-danger)" : "var(--c-text)",
+              }}>{option.label}</span>
               <AnimatePresence>
                 {isSelectedCorrect && (
                   <motion.span

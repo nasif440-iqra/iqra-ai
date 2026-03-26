@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getLetter } from "../../data/letters.js";
 import { getConnectedForms } from "../../data/connectedForms.js";
-import { playLetterAudio } from "../../lib/audio.js";
+import { playLetterAudio, sfxTap } from "../../lib/audio.js";
 import { Icons } from "../Icons.jsx";
 
 const POSITION_LABELS = {
@@ -41,6 +41,7 @@ export default function GuidedReveal({ exercise, onComplete }) {
   const showContextWord = isFullyRevealed && contextWord;
 
   function handleNext() {
+    sfxTap();
     if (!isFullyRevealed) {
       setRevealedIndex(i => i + 1);
     } else {

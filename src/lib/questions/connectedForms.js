@@ -446,7 +446,7 @@ export function generateConnectedFormExercises(lesson) {
       ).slice(0, 2);
       exercises.push({
         type: "comprehension",
-        prompt: `Can you recognize ${letter.name} in this form?`,
+        prompt: "Which letter is this?",
         displayArabic: cf.forms[pos],
         targetId: letterId,
         options: shuffle([
@@ -484,5 +484,8 @@ export function generateConnectedFormExercises(lesson) {
     }
   }
 
-  return exercises;
+  // Keep guided reveals at the start, shuffle the rest to avoid repetitive clustering
+  const guided = exercises.filter(e => e.type === "guided_reveal");
+  const rest = exercises.filter(e => e.type !== "guided_reveal");
+  return [...guided, ...shuffle(rest)];
 }
