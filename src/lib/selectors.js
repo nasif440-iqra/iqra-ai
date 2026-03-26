@@ -39,13 +39,16 @@ export function getPhaseCounts(completedLessonIds) {
   const p1 = LESSONS.filter(l => l.phase === 1);
   const p2 = LESSONS.filter(l => l.phase === 2);
   const p3 = LESSONS.filter(l => l.phase === 3);
+  const p4 = LESSONS.filter(l => l.phase === 4);
   return {
     p1Done: p1.filter(l => completedLessonIds.includes(l.id)).length,
     p2Done: p2.filter(l => completedLessonIds.includes(l.id)).length,
     p3Done: p3.filter(l => completedLessonIds.includes(l.id)).length,
+    p4Done: p4.filter(l => completedLessonIds.includes(l.id)).length,
     p1Total: p1.length,
     p2Total: p2.length,
     p3Total: p3.length,
+    p4Total: p4.length,
   };
 }
 

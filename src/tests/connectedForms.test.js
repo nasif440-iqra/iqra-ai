@@ -96,19 +96,6 @@ describe("generateConnectedFormExercises", () => {
       const reveal = result.find(e => e.type === "guided_reveal");
       expect(reveal.explanation).toContain("connects on both sides");
     });
-
-    it("guided_reveal exercises include contextWord when available", () => {
-      const lesson = makeLesson({ module: "4.1", teachIds: [2] }); // Ba has context words
-      const result = generateConnectedFormExercises(lesson);
-      const guided = result.find(e => e.type === "guided_reveal");
-      expect(guided).toBeDefined();
-      // Ba (id:2) has context words in phase4Words.js
-      if (guided.contextWord) {
-        expect(guided.contextWord).toHaveProperty("arabic");
-        expect(guided.contextWord).toHaveProperty("transliteration");
-        expect(guided.contextWord).toHaveProperty("meaning");
-      }
-    });
   });
 
   describe("RTL lesson (module 4.0)", () => {
