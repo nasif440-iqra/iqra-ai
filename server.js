@@ -12,6 +12,7 @@ import path from "path";
 import fs from "fs";
 import crypto from "crypto";
 import { fileURLToPath } from "url";
+import wordsRouter from "./server/words-api.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -278,6 +279,9 @@ app.get("/api/health", async (req, res) => {
     cacheMaxFiles: CACHE_MAX_FILES,
   });
 });
+
+// --- Words API ---
+app.use("/api/words", wordsRouter);
 
 // --- Production: serve built Vite app ---
 const distPath = path.join(__dirname, "dist");
