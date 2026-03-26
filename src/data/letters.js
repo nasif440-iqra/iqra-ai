@@ -1,3 +1,5 @@
+import { CONNECTED_FORMS } from './connectedForms.js';
+
 export const ARABIC_LETTERS = [
   { id:1,  letter:"\u0627", name:"Alif", transliteration:"aa", sound:"A long 'aa' sound, like 'father'", tip:"Open your mouth wide and let the sound flow.", dots:0, dotPos:"none", visualRule:"No dots \u2014 a tall stroke", family:"alif", soundHint:"'aa' as in father" },
   { id:2,  letter:"\u0628", name:"Ba",   transliteration:"b",  sound:"Like the English 'b' in 'ball'", tip:"Press lips together firmly, then release.", dots:1, dotPos:"below", visualRule:"1 dot below", family:"ba", soundHint:"'b' as in ball" },
@@ -43,5 +45,15 @@ export const ARABIC_LETTERS = [
 ];
 
 export function getLetter(id) {
-  return ARABIC_LETTERS.find(l => l.id === id);
+  const letter = ARABIC_LETTERS.find(l => l.id === id);
+  if (!letter) return undefined;
+  const cf = CONNECTED_FORMS[id];
+  if (cf) {
+    return { ...letter, forms: cf.forms, joins: cf.joins };
+  }
+  return letter;
+}
+
+export function getLetterWithForms(id) {
+  return getLetter(id);
 }
