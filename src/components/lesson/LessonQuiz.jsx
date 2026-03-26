@@ -104,18 +104,22 @@ export default function LessonQuiz({
           >
             {currentQ.hasAudio && (
               <div style={{ textAlign: "center", marginBottom: 16 }}>
-                <button onClick={() => playQuestionAudio(currentQ)} aria-label="Play audio" style={{ width: 80, height: 80, borderRadius: "50%", border: "2px solid var(--c-accent)", background: "var(--c-accent-light)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px", transition: "all 0.2s", boxShadow: "0 2px 12px rgba(196,164,100,0.15)" }}>
-                  <Icons.Volume size={32} color="var(--c-accent)" />
+                <button onClick={() => playQuestionAudio(currentQ)} aria-label="Play audio" className="hear-btn hear-btn--circle" style={{ margin: "0 auto 12px" }}>
+                  <span className="hear-icon" />
                 </button>
                 <p style={{ fontSize: 16, fontWeight: 700, color: "var(--c-text)" }}>{currentQ.prompt}</p>
-                <button onClick={() => playQuestionAudio(currentQ)} aria-label="Replay sound" className="btn btn-ghost" style={{ fontSize: 14, color: "var(--c-accent)", marginTop: 4 }}><Icons.Volume size={16} color="var(--c-accent)" /> Replay sound</button>
+                <button onClick={() => playQuestionAudio(currentQ)} aria-label="Replay sound" className="hear-btn hear-btn--sm" style={{ marginTop: 8 }}>
+                  <span className="hear-icon" /><span>Replay</span>
+                </button>
               </div>
             )}
             {currentQ.type === "letter_to_sound" && (
               <div style={{ textAlign: "center", marginBottom: 14 }}>
                 <div className="arabic-letter" style={{ fontSize: 100, lineHeight: 1.5, paddingBottom: 6 }}>{currentQ.prompt}</div>
                 <p style={{ fontSize: 15, fontWeight: 600, color: "var(--c-text-soft)", marginTop: 6 }}>{currentQ.promptSubtext}</p>
-                <button onClick={() => playQuestionAudio(currentQ)} aria-label="Hear this letter" className="btn btn-ghost" style={{ fontSize: 14, color: "var(--c-accent)", marginTop: 4 }}><Icons.Volume size={16} color="var(--c-accent)" /> Hear this letter</button>
+                <button onClick={() => playQuestionAudio(currentQ)} aria-label="Hear this letter" className="hear-btn" style={{ marginTop: 8 }}>
+                  <span className="hear-icon" /><span>Hear it</span>
+                </button>
               </div>
             )}
             {currentQ.type === "letter_to_name" && !currentQ.hasAudio && (
@@ -254,12 +258,12 @@ export default function LessonQuiz({
             )}
             {(isSoundQ || currentQ.ttsText) && (
               <div style={{ display: "flex", gap: 8, marginTop: 2 }}>
-                <button className="btn btn-outline" onClick={() => playQuestionAudio(currentQ)} style={{ flex: 1, fontSize: 13, padding: "10px 12px" }}>
-                  <Icons.Volume size={16} color="var(--c-accent)" /> Hear correct
+                <button className="hear-btn" onClick={() => playQuestionAudio(currentQ)} style={{ flex: 1 }}>
+                  <span className="hear-icon" /><span>Hear correct</span>
                 </button>
                 {!currentQ.ttsText && selected && selected !== currentQ.targetId && (
-                  <button className="btn btn-outline" onClick={() => playLetterAudio(selected, audioType)} style={{ flex: 1, fontSize: 13, padding: "10px 12px", borderColor: "var(--c-danger-light)" }}>
-                    <Icons.Volume size={16} color="var(--c-danger)" /> Hear your pick
+                  <button className="hear-btn hear-btn--danger" onClick={() => playLetterAudio(selected, audioType)} style={{ flex: 1 }}>
+                    <span className="hear-icon" /><span>Hear your pick</span>
                   </button>
                 )}
               </div>

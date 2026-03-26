@@ -1,0 +1,41 @@
+<svg width="400" height="480" viewBox="0 0 400 480" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    @keyframes tgp{0%,100%{opacity:.04}50%{opacity:.12}}
+    @keyframes tmb{0%,100%{filter:brightness(1);transform:translateY(0)}50%{filter:brightness(1.1);transform:translateY(-2px)}}
+    @keyframes tsp{0%,100%{opacity:.2;transform:scale(.7)}40%{opacity:1;transform:scale(1.4)}60%{opacity:.9;transform:scale(1.2)}}
+    @keyframes tag2{0%,100%{opacity:.5}50%{opacity:.9}}
+    @keyframes tkp{0%,100%{r:4;opacity:.7}50%{r:5;opacity:1}}
+    .tglow-o{animation:tgp 4s ease-in-out infinite}
+    .tglow-i{animation:tgp 4s ease-in-out infinite .6s}
+    .tcm{animation:tmb 5s ease-in-out infinite}
+    .ts1{animation:tsp 3s ease-in-out infinite}
+    .ts2{animation:tsp 3s ease-in-out infinite .7s}
+    .ts3{animation:tsp 3s ease-in-out infinite 1.4s}
+    .ts4{animation:tsp 3s ease-in-out infinite 2.1s}
+    .ts5{animation:tsp 3s ease-in-out infinite 1s}
+    .tao{animation:tag2 4s ease-in-out infinite .3s}
+    .tai{animation:tag2 4s ease-in-out infinite .8s}
+    .tks{animation:tkp 3s ease-in-out infinite}
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; } }
+  </style>
+  <!-- No background - transparent -->
+  <circle class="tglow-o" cx="200" cy="160" r="80" fill="#163323" opacity="0.06"/>
+  <circle class="tglow-i" cx="200" cy="160" r="55" fill="#163323" opacity="0.08"/>
+  <g class="tcm" style="transform-origin:200px 160px">
+    <circle cx="200" cy="160" r="52" fill="#163323"/>
+    <circle cx="218" cy="146" r="42" fill="#FFFFFF"/>
+  </g>
+  <g class="ts1" style="transform-origin:140px 95px"><circle cx="140" cy="95" r="3" fill="#163323" opacity="0.4"/></g>
+  <g class="ts2" style="transform-origin:265px 110px"><circle cx="265" cy="110" r="2.5" fill="#163323" opacity="0.4"/></g>
+  <g class="ts3" style="transform-origin:245px 80px"><circle cx="245" cy="80" r="2" fill="#163323" opacity="0.4"/></g>
+  <g class="ts4" style="transform-origin:132px 135px"><circle cx="132" cy="135" r="2" fill="#163323" opacity="0.35"/></g>
+  <g class="ts5" style="transform-origin:162px 72px"><circle cx="162" cy="72" r="2.5" fill="#163323" opacity="0.4"/></g>
+  <path class="tao" d="M122 310 L122 185 Q122 58 200 46 Q278 58 278 185 L278 310" fill="none" stroke="#163323" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>
+  <path class="tai" d="M140 310 L140 190 Q140 80 200 68 Q260 80 260 190 L260 310" fill="none" stroke="#163323" stroke-width="1" opacity="0.2"/>
+  <circle class="tks" cx="200" cy="44" r="4" fill="#163323" opacity="0.7"/>
+  <circle cx="122" cy="310" r="2.5" fill="#163323" opacity="0.25"/>
+  <circle cx="278" cy="310" r="2.5" fill="#163323" opacity="0.25"/>
+  <line x1="112" y1="310" x2="288" y2="310" stroke="#163323" stroke-width="0.5" opacity="0.15"/>
+  <text x="200" y="375" text-anchor="middle" font-family="'Lora', Georgia, serif" font-size="58" font-weight="400" letter-spacing="16" fill="#163323">tila</text>
+  <text x="200" y="415" text-anchor="middle" font-family="'Inter', sans-serif" font-size="14" letter-spacing="5" fill="#163323" opacity="0.35">READ BEAUTIFULLY</text>
+</svg>

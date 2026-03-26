@@ -98,10 +98,6 @@ function WordReveal({ text, baseDelay = 0, style }) {
    ══════════════════════════════════════════════ */
 function StepHadith({ onReady }) {
   const [phase, setPhase] = useState(0);
-  // phase 0: hadith words appear (0-2s)
-  // phase 1: divider draws + attribution (2.5s)
-  // phase 2: salawat + reference (3.5s)
-  // phase 3: button (4.5s)
 
   useEffect(() => {
     const t1 = setTimeout(() => setPhase(1), 2500);
@@ -118,75 +114,44 @@ function StepHadith({ onReady }) {
       exit={{ opacity: 0, y: -20, filter: "blur(6px)" }}
       transition={{ duration: 0.4 }}
     >
-      {/* Breathing glow orb */}
       <div style={styles.glowOrb} />
 
-      {/* Hadith — word by word */}
       <WordReveal
         text="The most beloved deeds to Allah are those done consistently, even if they are small."
         baseDelay={0.4}
         style={styles.hadithText}
       />
 
-      {/* Gold divider — draws itself */}
-      <div style={{
-        ...styles.goldDivider,
-        animation: phase >= 1 ? "dividerDraw 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards" : "none",
-        opacity: phase >= 1 ? undefined : 0,
-        width: phase >= 1 ? undefined : 0,
-      }} />
+      <motion.div
+        animate={{ width: phase >= 1 ? 56 : 0, opacity: phase >= 1 ? 1 : 0 }}
+        transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+        style={{ ...styles.goldDivider, width: 0, opacity: 0 }}
+      />
 
-      {/* Attribution */}
-      <AnimatePresence>
-        {phase >= 1 && (
-          <motion.p
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.3 }}
-            style={styles.attribution}
-          >
-            Prophet Muhammad
-          </motion.p>
-        )}
-      </AnimatePresence>
+      <motion.p
+        animate={{ opacity: phase >= 1 ? 1 : 0, y: phase >= 1 ? 0 : 8 }}
+        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        style={{ ...styles.attribution, opacity: 0 }}
+      >
+        Prophet Muhammad
+      </motion.p>
 
-      {/* Salawat + reference */}
-      <AnimatePresence>
-        {phase >= 2 && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ type: "spring", stiffness: 200, damping: 18 }}
-            style={{ textAlign: "center", position: "relative", zIndex: 1 }}
-          >
-            <p style={styles.salawat}>{"\uFDFA"}</p>
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-              style={styles.reference}
-            >
-              Sahih al-Bukhari 6464
-            </motion.p>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <motion.div
+        animate={{ opacity: phase >= 2 ? 1 : 0, scale: phase >= 2 ? 1 : 0.9 }}
+        transition={{ type: "spring", stiffness: 200, damping: 18 }}
+        style={{ textAlign: "center", position: "relative", zIndex: 1, opacity: 0 }}
+      >
+        <p style={styles.salawat}>{"\uFDFA"}</p>
+        <p style={styles.reference}>Sahih al-Bukhari 6464</p>
+      </motion.div>
 
-      {/* Button — rises with spring */}
-      <AnimatePresence>
-        {phase >= 3 && (
-          <motion.div
-            initial={{ opacity: 0, y: 28, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ type: "spring", stiffness: 180, damping: 16 }}
-            style={styles.actions}
-          >
-            <button className="btn btn-primary" onClick={onReady}>
-              Continue
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <motion.div
+        animate={{ opacity: phase >= 3 ? 1 : 0, y: phase >= 3 ? 0 : 16 }}
+        transition={{ type: "spring", stiffness: 180, damping: 16 }}
+        style={{ ...styles.actions, opacity: 0 }}
+      >
+        <button className="btn btn-primary" onClick={onReady}>Continue</button>
+      </motion.div>
     </motion.div>
   );
 }
@@ -212,7 +177,6 @@ function StepMeaning({ onReady }) {
       exit={{ opacity: 0, y: -20, filter: "blur(6px)" }}
       transition={{ duration: 0.4 }}
     >
-      {/* Arabic wird — scales in with blur */}
       <motion.div
         initial={{ opacity: 0, scale: 0.6, filter: "blur(12px)" }}
         animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
@@ -231,53 +195,33 @@ function StepMeaning({ onReady }) {
         wird
       </motion.p>
 
-      {/* First paragraph */}
-      <AnimatePresence>
-        {phase >= 1 && (
-          <motion.div
-            initial={{ opacity: 0, y: 16, filter: "blur(4px)" }}
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            style={styles.meaningBody}
-          >
-            <p style={styles.meaningParagraph}>
-              A <span style={styles.meaningHighlight}>Wird</span> is a daily spiritual practice — a portion of worship you return to each day, no matter how small.
-            </p>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <motion.div
+        animate={{ opacity: phase >= 1 ? 1 : 0, y: phase >= 1 ? 0 : 12 }}
+        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+        style={{ ...styles.meaningBody, opacity: 0 }}
+      >
+        <p style={styles.meaningParagraph}>
+          A <span style={styles.meaningHighlight}>Wird</span> is a daily spiritual practice {"\u2014"} a portion of worship you return to each day, no matter how small.
+        </p>
+      </motion.div>
 
-      {/* Second paragraph — separate timing */}
-      <AnimatePresence>
-        {phase >= 2 && (
-          <motion.div
-            initial={{ opacity: 0, y: 14, filter: "blur(4px)" }}
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            style={styles.meaningBody}
-          >
-            <p style={{ ...styles.meaningParagraph, marginTop: 14 }}>
-              In Tila, your Wird is your daily streak. Each day you practice, your Wird grows. It's not about perfection — it's about showing up.
-            </p>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <motion.div
+        animate={{ opacity: phase >= 2 ? 1 : 0, y: phase >= 2 ? 0 : 12 }}
+        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+        style={{ ...styles.meaningBody, opacity: 0 }}
+      >
+        <p style={{ ...styles.meaningParagraph, marginTop: 14 }}>
+          In Tila, your Wird is your daily streak. Each day you practice, your Wird grows. It{"\u2019"}s not about perfection {"\u2014"} it{"\u2019"}s about showing up.
+        </p>
+      </motion.div>
 
-      {/* Button */}
-      <AnimatePresence>
-        {phase >= 3 && (
-          <motion.div
-            initial={{ opacity: 0, y: 28, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ type: "spring", stiffness: 180, damping: 16 }}
-            style={styles.actions}
-          >
-            <button className="btn btn-primary" onClick={onReady}>
-              Continue
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <motion.div
+        animate={{ opacity: phase >= 3 ? 1 : 0, y: phase >= 3 ? 0 : 16 }}
+        transition={{ type: "spring", stiffness: 180, damping: 16 }}
+        style={{ ...styles.actions, opacity: 0 }}
+      >
+        <button className="btn btn-primary" onClick={onReady}>Continue</button>
+      </motion.div>
     </motion.div>
   );
 }
@@ -346,49 +290,69 @@ function StepFirstWird({ onReady }) {
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
         style={styles.wirdHeading}
       >
-        Your Wird in Tila
+        A Sacred Daily Practice
       </motion.h2>
 
-      {/* ── Large centered moon hero ── */}
-      <div style={{ position: "relative", width: 120, height: 120, marginBottom: 28 }}>
+      {/* ── Brand mark hero — crescent + arch ── */}
+      <div style={{ position: "relative", width: 130, height: 170, marginBottom: 24, display: "flex", alignItems: "center", justifyContent: "center" }}>
         {/* Background glow */}
         <motion.div
           initial={{ opacity: 0, scale: 0.5 }}
           animate={phase >= 1 ? { opacity: 1, scale: 1 } : {}}
           transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
-          style={styles.heroMoonGlow}
+          style={{ position: "absolute", inset: -30, borderRadius: "50%", background: "radial-gradient(circle, rgba(196,164,100,0.16) 0%, rgba(196,164,100,0.05) 50%, transparent 70%)", pointerEvents: "none" }}
         />
 
-        {/* Empty moon ring */}
+        {/* Empty state — faint arch outline */}
         <AnimatePresence>
-          {phase >= 1 && (
+          {phase >= 1 && phase < 2 && (
             <motion.div
               initial={{ opacity: 0, scale: 0.6 }}
-              animate={{ opacity: 1, scale: 1 }}
+              animate={{ opacity: 0.2, scale: 1 }}
+              exit={{ opacity: 0 }}
               transition={{ type: "spring", stiffness: 180, damping: 16 }}
-              style={styles.heroMoonEmpty}
+              style={{ position: "absolute", inset: 0 }}
             >
-              <span style={{ fontSize: 52, lineHeight: 1, opacity: 0.15, color: "var(--c-accent)" }}>☽</span>
+              <svg width="130" height="170" viewBox="0 0 130 170" fill="none">
+                <path d="M26 158 L26 72 Q26 8 65 2 Q104 8 104 72 L104 158" stroke="var(--c-accent)" strokeWidth="2" strokeLinecap="round" opacity="0.3" strokeDasharray="4 4" />
+                <circle cx="65" cy="65" r="30" stroke="var(--c-accent)" strokeWidth="1.5" opacity="0.2" strokeDasharray="3 3" />
+              </svg>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Filled moon — radial wipe from bottom */}
-        <div style={{
-          ...styles.heroMoonFilled,
-          animation: phase >= 2
-            ? "moonFill 1.4s cubic-bezier(0.22, 1, 0.36, 1) forwards, moonGlow 1.6s ease-out 0.6s forwards"
-            : "none",
-          opacity: phase >= 2 ? undefined : 0,
-        }}>
-          <span style={{ fontSize: 52, lineHeight: 1, color: "var(--c-accent)" }}>☽</span>
-        </div>
+        {/* Filled state — brand mark reveals */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.7 }}
+          animate={phase >= 2 ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.7 }}
+          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+          style={{ position: "relative", zIndex: 1 }}
+        >
+          <svg width="130" height="170" viewBox="0 0 130 170" fill="none">
+            {/* Arch */}
+            <path d="M26 158 L26 72 Q26 8 65 2 Q104 8 104 72 L104 158" stroke="var(--c-accent)" strokeWidth="2" strokeLinecap="round" opacity="0.7" />
+            <path d="M36 158 L36 76 Q36 20 65 12 Q94 20 94 76 L94 158" stroke="var(--c-accent)" strokeWidth="0.8" opacity="0.25" />
+            {/* Keystone */}
+            <circle cx="65" cy="2" r="3" fill="var(--c-accent)" opacity="0.8" />
+            {/* Base dots */}
+            <circle cx="26" cy="158" r="1.5" fill="var(--c-accent)" opacity="0.3" />
+            <circle cx="104" cy="158" r="1.5" fill="var(--c-accent)" opacity="0.3" />
+            {/* Crescent */}
+            <circle cx="65" cy="65" r="30" fill="var(--c-accent)" />
+            <circle cx="74" cy="56" r="24" fill="var(--c-bg)" />
+            {/* Stars */}
+            <circle cx="42" cy="34" r="2" fill="var(--c-accent)" opacity="0.4" />
+            <circle cx="90" cy="40" r="1.6" fill="var(--c-accent)" opacity="0.35" />
+            <circle cx="82" cy="26" r="1.3" fill="var(--c-accent)" opacity="0.3" />
+          </svg>
+        </motion.div>
 
         {/* Ring pulse on fill */}
         {phase >= 2 && (
           <div style={{
-            position: "absolute", inset: -4, borderRadius: "50%",
-            border: "2px solid rgba(196,164,100,0.4)",
+            position: "absolute", top: 20, left: 10, right: 10, bottom: 40,
+            borderRadius: "50%",
+            border: "2px solid rgba(196,164,100,0.3)",
             animation: "moonRingPulse 1.2s ease-out forwards",
             pointerEvents: "none",
           }} />
@@ -399,78 +363,48 @@ function StepFirstWird({ onReady }) {
       </div>
 
       {/* Day counter + caption */}
-      <AnimatePresence>
-        {phase >= 3 && (
-          <motion.div
-            initial={{ opacity: 0, y: 16, filter: "blur(4px)" }}
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            style={{ textAlign: "center", marginBottom: 8 }}
-          >
-            <motion.p
-              initial={{ scale: 0.8 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", stiffness: 200, damping: 14 }}
-              style={styles.dayCounter}
-            >
-              Day 1
-            </motion.p>
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              style={styles.dayCaption}
-            >
-              Your Wird has begun
-            </motion.p>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <motion.div
+        animate={{ opacity: phase >= 3 ? 1 : 0, y: phase >= 3 ? 0 : 14 }}
+        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        style={{ textAlign: "center", marginBottom: 8, opacity: 0 }}
+      >
+        <p style={styles.dayCounter}>Day 1</p>
+        <p style={styles.dayCaption}>Your Wird has begun</p>
+      </motion.div>
 
       {/* Subtext + quote */}
-      <AnimatePresence>
-        {phase >= 4 && (
-          <motion.div
-            initial={{ opacity: 0, y: 12, filter: "blur(3px)" }}
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-            style={{ textAlign: "center", marginTop: 16 }}
-          >
-            <p style={styles.wirdSubtext}>
-              Come back tomorrow to keep it growing.
-            </p>
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.5 }}
-              style={styles.wirdQuote}
-            >
-              Allah loves the one who returns.
-              <span style={styles.wirdQuoteRef}>— Quran 2:222</span>
-            </motion.p>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <motion.div
+        animate={{ opacity: phase >= 4 ? 1 : 0, y: phase >= 4 ? 0 : 12 }}
+        transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+        style={{ textAlign: "center", marginTop: 16, opacity: 0 }}
+      >
+        <p style={styles.wirdSubtext}>
+          Come back tomorrow to keep it growing.
+        </p>
+        <motion.p
+          animate={{ opacity: phase >= 4 ? 1 : 0 }}
+          transition={{ duration: 0.5, delay: 0.5 }}
+          style={{ ...styles.wirdQuote, opacity: 0 }}
+        >
+          And whoever holds firmly to Allah has been guided to a straight path.
+          <span style={styles.wirdQuoteRef}>{"\u2014"} Quran 3:101</span>
+        </motion.p>
+      </motion.div>
 
       {/* Button */}
-      <AnimatePresence>
-        {phase >= 5 && (
-          <motion.div
-            initial={{ opacity: 0, y: 28, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ type: "spring", stiffness: 180, damping: 16 }}
-            style={styles.actions}
-          >
-            <button
-              className="btn btn-primary"
-              style={{ animation: "pulsingGoldBorder 2.5s ease-in-out infinite" }}
-              onClick={onReady}
-            >
-              Continue
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <motion.div
+        animate={{ opacity: phase >= 5 ? 1 : 0, y: phase >= 5 ? 0 : 16 }}
+        transition={{ type: "spring", stiffness: 180, damping: 16 }}
+        style={{ ...styles.actions, opacity: 0 }}
+      >
+        <button
+          className="btn btn-primary"
+          style={{ animation: phase >= 5 ? "pulsingGoldBorder 2.5s ease-in-out infinite" : "none" }}
+          onClick={onReady}
+        >
+          Continue
+        </button>
+      </motion.div>
     </motion.div>
   );
 }
@@ -537,7 +471,8 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "flex-start",
+    paddingTop: "15vh",
     textAlign: "center",
     width: "100%",
     maxWidth: 360,

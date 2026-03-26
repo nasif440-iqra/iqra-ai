@@ -18,7 +18,7 @@ export default function LessonSpeak({ currentLetter, speakIndex, totalLetters, s
           <div className="scale-in" key={speakIndex}><div className="arabic-letter" style={{ fontSize: 110, marginBottom: 4 }}>{currentLetter.letter}</div></div>
           <h3 style={{ fontFamily: "var(--font-heading)", fontSize: 20, fontWeight: 600, marginBottom: 4 }}>Try saying: <span style={{ color: "var(--c-primary)" }}>{currentLetter.name}</span></h3>
           <p style={{ fontSize: 14, color: "var(--c-text-soft)", marginBottom: 20 }}>{`"${currentLetter.transliteration}" \u2014 ${currentLetter.soundHint}`}</p>
-          <button className="btn btn-outline" onClick={() => playLetterAudio(currentLetter.id, audioType)} style={{ width: "auto", padding: "8px 20px", fontSize: 14, marginBottom: 24 }}><Icons.Volume size={18} color="var(--c-primary)" /> Hear it first</button>
+          <button className="hear-btn" onClick={() => playLetterAudio(currentLetter.id, audioType)} style={{ marginBottom: 24 }}><span className="hear-icon" /><span>Hear it first</span></button>
           <button className="mic-btn" onClick={onRecord}><Icons.Mic size={36} color="white" /></button>
           <p style={{ fontSize: 13, color: "var(--c-text-muted)", marginTop: 12 }}>{"Tap when ready \u2014 no rush"}</p>
           <button className="btn btn-ghost" onClick={onNext} style={{ marginTop: 16, fontSize: 13, color: "var(--c-text-muted)" }}>{"Skip"}</button>
@@ -28,7 +28,7 @@ export default function LessonSpeak({ currentLetter, speakIndex, totalLetters, s
           <div style={{ fontSize: 48, marginBottom: 12 }}>{"\u2705"}</div>
           <p style={{ fontFamily: "var(--font-heading)", fontSize: 18, fontWeight: 600, color: "var(--c-primary-dark)", marginBottom: 8 }}>Nice try!</p>
           <p style={{ fontSize: 14, color: "var(--c-text-soft)", marginBottom: 16 }}>{"Keep practicing \u2014 real feedback coming soon."}</p>
-          <button className="btn btn-secondary" onClick={() => playLetterAudio(currentLetter.id, audioType)} style={{ marginBottom: 10 }}><Icons.Volume size={20} color="white" /> Hear It Again</button>
+          <button className="hear-btn" onClick={() => playLetterAudio(currentLetter.id, audioType)} style={{ marginBottom: 10 }}><span className="hear-icon" /><span>Hear it again</span></button>
         </div>}
       </div>
       <div style={{ paddingBottom: 24, minHeight: 70 }}>{speakPhase === "done" && <button className="btn btn-primary" onClick={() => { sfxTap(); onNext(); }}>{speakIndex < totalLetters - 1 ? `Next: ${/* next letter name placeholder */ "next"}` : "Back to Results"}</button>}</div>

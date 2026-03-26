@@ -95,7 +95,10 @@ export default function HomeScreen({ progress, mastery, completedLessonIds, less
 
         {/* ── Header ── */}
         <div className="fade-up" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-          <h1 style={{ fontFamily: "var(--font-heading)", fontSize: 24, fontWeight: 700, letterSpacing: "-0.01em", color: "var(--c-text)" }}>Tila</h1>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <img src="/favicon.svg" alt="" style={{ width: 28, height: 28 }} />
+            <h1 style={{ fontFamily: "var(--font-heading)", fontSize: 22, fontWeight: 700, letterSpacing: "0.04em", color: "var(--c-text)" }}>tila</h1>
+          </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             {/* Daily goal */}
             {dailyGoalNum > 0 && (

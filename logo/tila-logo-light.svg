@@ -1,0 +1,44 @@
+<svg width="300" height="500" viewBox="0 0 300 500" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    @keyframes lgp{0%,100%{opacity:.06}50%{opacity:.18}}
+    @keyframes lmb{0%,100%{filter:brightness(1);transform:translateY(0)}50%{filter:brightness(1.08);transform:translateY(-2px)}}
+    @keyframes lsp{0%,100%{opacity:.15;transform:scale(.7)}40%{opacity:.7;transform:scale(1.4)}60%{opacity:.6;transform:scale(1.2)}}
+    @keyframes lag{0%,100%{opacity:.5}50%{opacity:.9}}
+    @keyframes lkp{0%,100%{r:4;opacity:.7}50%{r:5;opacity:1}}
+    .lglow-o{animation:lgp 4s ease-in-out infinite}
+    .lglow-i{animation:lgp 4s ease-in-out infinite .6s}
+    .lcm{animation:lmb 5s ease-in-out infinite}
+    .ls1{animation:lsp 3s ease-in-out infinite}
+    .ls2{animation:lsp 3s ease-in-out infinite .7s}
+    .ls3{animation:lsp 3s ease-in-out infinite 1.4s}
+    .ls4{animation:lsp 3s ease-in-out infinite 2.1s}
+    .ls5{animation:lsp 3s ease-in-out infinite 1s}
+    .lao{animation:lag 4s ease-in-out infinite .3s}
+    .lai{animation:lag 4s ease-in-out infinite .8s}
+    .lks{animation:lkp 3s ease-in-out infinite}
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; } }
+  </style>
+  <rect x="0" y="0" width="300" height="500" rx="32" fill="#F8F6F0"/>
+  <rect x="6" y="6" width="288" height="488" rx="28" fill="none" stroke="#163323" stroke-width="0.5" opacity="0.1"/>
+  <circle class="lglow-o" cx="150" cy="175" r="80" fill="#163323" opacity="0.05"/>
+  <circle class="lglow-i" cx="150" cy="175" r="55" fill="#163323" opacity="0.06"/>
+  <g class="lcm" style="transform-origin:150px 175px">
+    <circle cx="150" cy="175" r="46" fill="#163323"/>
+    <circle cx="166" cy="163" r="37" fill="#F8F6F0"/>
+  </g>
+  <g class="ls1" style="transform-origin:105px 112px"><circle cx="105" cy="112" r="2.5" fill="#163323" opacity="0.5"/></g>
+  <g class="ls2" style="transform-origin:200px 125px"><circle cx="200" cy="125" r="2" fill="#163323" opacity="0.5"/></g>
+  <g class="ls3" style="transform-origin:185px 98px"><circle cx="185" cy="98" r="1.8" fill="#163323" opacity="0.5"/></g>
+  <g class="ls4" style="transform-origin:98px 148px"><circle cx="98" cy="148" r="1.5" fill="#163323" opacity="0.4"/></g>
+  <g class="ls5" style="transform-origin:122px 92px"><circle cx="122" cy="92" r="2" fill="#163323" opacity="0.5"/></g>
+  <path class="lao" d="M88 320 L88 195 Q88 78 150 68 Q212 78 212 195 L212 320" fill="none" stroke="#163323" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>
+  <path class="lai" d="M104 320 L104 200 Q104 98 150 88 Q196 98 196 200 L196 320" fill="none" stroke="#163323" stroke-width="1" opacity="0.2"/>
+  <circle class="lks" cx="150" cy="66" r="4" fill="#163323" opacity="0.8"/>
+  <circle cx="88" cy="320" r="2" fill="#163323" opacity="0.25"/>
+  <circle cx="212" cy="320" r="2" fill="#163323" opacity="0.25"/>
+  <text x="150" y="385" text-anchor="middle" font-family="'Lora', Georgia, serif" font-size="54" font-weight="400" letter-spacing="16" fill="#163323">tila</text>
+  <text x="150" y="425" text-anchor="middle" font-family="'Inter', sans-serif" font-size="13" letter-spacing="5" fill="#163323" opacity="0.4">READ BEAUTIFULLY</text>
+  <line x1="110" y1="452" x2="150" y2="460" stroke="#163323" stroke-width="0.5" opacity="0.12"/>
+  <line x1="190" y1="452" x2="150" y2="460" stroke="#163323" stroke-width="0.5" opacity="0.12"/>
+  <circle cx="150" cy="460" r="1.5" fill="#163323" opacity="0.15"/>
+</svg>

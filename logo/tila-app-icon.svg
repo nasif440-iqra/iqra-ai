@@ -1,0 +1,39 @@
+<svg width="400" height="400" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    @keyframes gp{0%,100%{opacity:.08}50%{opacity:.25}}
+    @keyframes mb{0%,100%{filter:brightness(1);transform:translateY(0)}50%{filter:brightness(1.12);transform:translateY(-2px)}}
+    @keyframes sp{0%,100%{opacity:.2;transform:scale(.7)}40%{opacity:1;transform:scale(1.4)}60%{opacity:.9;transform:scale(1.2)}}
+    @keyframes ag{0%,100%{opacity:.6}50%{opacity:1}}
+    @keyframes kp{0%,100%{r:3.5;opacity:.8}50%{r:4.5;opacity:1}}
+    .glow-o{animation:gp 4s ease-in-out infinite}
+    .glow-i{animation:gp 4s ease-in-out infinite .6s}
+    .cm{animation:mb 5s ease-in-out infinite}
+    .s1{animation:sp 3s ease-in-out infinite}
+    .s2{animation:sp 3s ease-in-out infinite .7s}
+    .s3{animation:sp 3s ease-in-out infinite 1.4s}
+    .s4{animation:sp 3s ease-in-out infinite 2.1s}
+    .s5{animation:sp 3s ease-in-out infinite 1s}
+    .ao{animation:ag 4s ease-in-out infinite .3s}
+    .ai{animation:ag 4s ease-in-out infinite .8s}
+    .ks{animation:kp 3s ease-in-out infinite}
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; } }
+  </style>
+  <rect x="0" y="0" width="400" height="400" rx="80" fill="#163323"/>
+  <rect x="6" y="6" width="388" height="388" rx="76" fill="none" stroke="#C4A464" stroke-width="0.5" opacity="0.15"/>
+  <circle class="glow-o" cx="200" cy="195" r="90" fill="#C4A464" opacity="0.1"/>
+  <circle class="glow-i" cx="200" cy="195" r="62" fill="#C4A464" opacity="0.12"/>
+  <g class="cm" style="transform-origin:200px 195px">
+    <circle cx="200" cy="195" r="52" fill="#C4A464"/>
+    <circle cx="218" cy="181" r="42" fill="#163323"/>
+  </g>
+  <g class="s1" style="transform-origin:148px 128px"><circle cx="148" cy="128" r="3" fill="#C4A464"/></g>
+  <g class="s2" style="transform-origin:258px 142px"><circle cx="258" cy="142" r="2.5" fill="#C4A464"/></g>
+  <g class="s3" style="transform-origin:240px 112px"><circle cx="240" cy="112" r="2.2" fill="#C4A464"/></g>
+  <g class="s4" style="transform-origin:140px 172px"><circle cx="140" cy="172" r="2" fill="#C4A464"/></g>
+  <g class="s5" style="transform-origin:170px 105px"><circle cx="170" cy="105" r="2.5" fill="#C4A464"/></g>
+  <path class="ao" d="M132 340 L132 215 Q132 88 200 76 Q268 88 268 215 L268 340" fill="none" stroke="#C4A464" stroke-width="3" stroke-linecap="round" opacity="0.85"/>
+  <path class="ai" d="M150 340 L150 222 Q150 112 200 100 Q250 112 250 222 L250 340" fill="none" stroke="#C4A464" stroke-width="1.2" opacity="0.3"/>
+  <circle class="ks" cx="200" cy="74" r="3.5" fill="#C4A464" opacity="0.9"/>
+  <circle cx="132" cy="340" r="2.5" fill="#C4A464" opacity="0.35"/>
+  <circle cx="268" cy="340" r="2.5" fill="#C4A464" opacity="0.35"/>
+</svg>

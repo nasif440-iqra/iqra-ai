@@ -46,39 +46,51 @@ const stagger = (delay) => ({
   transition: { duration: 0.55, ease: [0, 0, 0.2, 1], delay },
 });
 
-/* ── Floating background letters for hadith screen ── */
-/* Three-layer depth system: far (atmospheric edges), mid (arc backbone), near (bridge to content) */
+/* ── Floating background letters — shared across first 3 onboarding screens ── */
+/* Spread across the full viewport as a living texture. Visible but not dominant. */
+/* Re-key on each step so letters get fresh entrance animations on each transition. */
 const floatingLetters = [
-  // Layer 1 — Far background (barely visible, large, slow — like clouds drifting)
-  { char: "ب", top: "4%",  left: "82%", size: 64, opacity: 0.05,
-    motion: { x: [0, 12, 0] }, floatDuration: 14, entranceDelay: 0 },
-  { char: "ن", top: "10%", left: "6%",  size: 56, opacity: 0.04,
-    motion: { y: [0, -15, 0] }, floatDuration: 12, entranceDelay: 0 },
-  { char: "ك", top: "2%",  left: "44%", size: 58, opacity: 0.04,
-    motion: { y: [0, -12, 0], rotate: [0, -3, 0] }, floatDuration: 13, entranceDelay: 0 },
-
-  // Layer 2 — Mid-ground arc (visible but soft — like leaves in still water)
-  { char: "ع", top: "18%", left: "20%", size: 40, opacity: 0.11,
-    motion: { x: [0, 10, 0], y: [0, -12, 0] }, floatDuration: 8, entranceDelay: 0.3 },
-  { char: "ه", top: "22%", left: "38%", size: 34, opacity: 0.10,
-    motion: { x: [0, -9, 0], y: [0, 7, 0] }, floatDuration: 7.5, entranceDelay: 0.4 },
-  { char: "ق", top: "14%", left: "50%", size: 36, opacity: 0.09,
-    motion: { rotate: [0, 8, 0], y: [0, -9, 0] }, floatDuration: 9, entranceDelay: 0.5 },
-  { char: "د", top: "12%", left: "66%", size: 38, opacity: 0.08,
-    motion: { y: [0, -11, 0], rotate: [0, 7, 0] }, floatDuration: 8.5, entranceDelay: 0.6 },
-  { char: "س", top: "20%", left: "74%", size: 44, opacity: 0.12,
-    motion: { x: [0, -11, 0], y: [0, 8, 0] }, floatDuration: 7, entranceDelay: 0.7 },
-
-  // Layer 3 — Near foreground (most visible, bridge to content)
-  { char: "ر", top: "30%", left: "32%", size: 26, opacity: 0.17,
-    motion: { y: [0, -14, 0], scale: [1, 1.05, 1] }, floatDuration: 5.5, entranceDelay: 0.9 },
-  { char: "ي", top: "34%", left: "14%", size: 22, opacity: 0.14,
-    motion: { x: [0, 6, 0], y: [0, -7, 0], scale: [1, 1.04, 1] }, floatDuration: 5, entranceDelay: 1.0 },
-  { char: "م", top: "28%", left: "64%", size: 24, opacity: 0.15,
-    motion: { x: [0, 12, 0], y: [0, -6, 0] }, floatDuration: 6, entranceDelay: 1.1 },
-  { char: "ت", top: "32%", left: "80%", size: 28, opacity: 0.16,
-    motion: { y: [0, -9, 0], x: [0, -5, 0] }, floatDuration: 5.8, entranceDelay: 1.2 },
+  { char: "\u0628", top: "3%",  left: "8%",   size: 30, opacity: 0.09, motion: { y: [0, 8, 0] },  floatDuration: 16 },
+  { char: "\u0646", top: "5%",  left: "52%",  size: 26, opacity: 0.07, motion: { y: [0, -6, 0] }, floatDuration: 18 },
+  { char: "\u0643", top: "7%",  left: "86%",  size: 28, opacity: 0.08, motion: { x: [0, 6, 0] },  floatDuration: 20 },
+  { char: "\u0639", top: "22%", left: "3%",   size: 24, opacity: 0.08, motion: { y: [0, 7, 0] },  floatDuration: 15 },
+  { char: "\u0642", top: "19%", left: "91%",  size: 28, opacity: 0.07, motion: { y: [0, -7, 0] }, floatDuration: 17 },
+  { char: "\u062F", top: "40%", left: "5%",   size: 26, opacity: 0.07, motion: { x: [0, 5, 0] },  floatDuration: 19 },
+  { char: "\u0633", top: "44%", left: "89%",  size: 24, opacity: 0.08, motion: { y: [0, 6, 0] },  floatDuration: 16 },
+  { char: "\u0631", top: "62%", left: "7%",   size: 28, opacity: 0.09, motion: { y: [0, -6, 0] }, floatDuration: 18 },
+  { char: "\u064A", top: "58%", left: "92%",  size: 26, opacity: 0.07, motion: { x: [0, -5, 0] }, floatDuration: 20 },
+  { char: "\u0645", top: "78%", left: "10%",  size: 24, opacity: 0.08, motion: { y: [0, 7, 0] },  floatDuration: 17 },
+  { char: "\u0647", top: "76%", left: "50%",  size: 28, opacity: 0.07, motion: { y: [0, -5, 0] }, floatDuration: 19 },
+  { char: "\u062A", top: "82%", left: "85%",  size: 26, opacity: 0.08, motion: { x: [0, 6, 0] },  floatDuration: 16 },
 ];
+
+/** Floating letters background layer. Remounts on key change for fresh entrance. */
+function FloatingLettersLayer({ animKey }) {
+  return (
+    <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none", zIndex: 0 }}>
+      {floatingLetters.map((l, i) => (
+        <motion.span
+          key={`${animKey}-${i}`}
+          dir="rtl"
+          style={{
+            position: "absolute", top: l.top, left: l.left,
+            fontFamily: "var(--font-arabic)", fontSize: l.size,
+            color: "var(--c-primary)", pointerEvents: "none", userSelect: "none",
+          }}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: l.opacity, y: 0, ...l.motion }}
+          transition={{
+            opacity: { delay: i * 0.06, duration: 0.8, ease: [0.22, 1, 0.36, 1] },
+            y: l.motion?.y ? { duration: l.floatDuration, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" } : { delay: i * 0.06, duration: 0.6 },
+            x: l.motion?.x ? { duration: l.floatDuration, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" } : undefined,
+          }}
+        >
+          {l.char}
+        </motion.span>
+      ))}
+    </div>
+  );
+}
 
 /* ── Word-by-word text ── */
 function StaggeredText({ text, baseDelay = 0, style }) {
@@ -214,6 +226,9 @@ export default function OnboardingScreen({ onComplete, onStartLesson1 }) {
 
   return (
     <div style={styles.root}>
+      {/* Floating Arabic letters background — visible on first 3 screens, re-animate on each step */}
+      {step <= 2 && <FloatingLettersLayer animKey={step} />}
+
       {/* Hide progress bar on splash and letter reveal (auto-advance screens) */}
       {step !== 0 && step !== 4 && (
         <div style={styles.progressContainer}>
@@ -222,60 +237,75 @@ export default function OnboardingScreen({ onComplete, onStartLesson1 }) {
       )}
 
       <AnimatePresence mode="wait">
-        {/* ── STEP 0: WELCOME — App introduction ── */}
+        {/* ── STEP 0: WELCOME — Brand introduction ── */}
         {step === 0 && (
           <motion.div key="splash" style={styles.splashRoot} {...dissolve} transition={{ duration: 0.8 }}>
-            {/* Glow orb */}
+            {/* Large warm ambient glow */}
             <motion.div
-              className="glow-orb-warm"
-              style={styles.splashGlow}
+              style={{ position: "absolute", width: 360, height: 360, borderRadius: "50%", background: "radial-gradient(circle, rgba(196,164,100,0.12) 0%, rgba(196,164,100,0.04) 50%, transparent 70%)", pointerEvents: "none" }}
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 1.8, ease: [0.22, 1, 0.36, 1] }}
             />
 
-            {/* Crescent moon icon */}
+            {/* Crescent + arch mark — inline SVG, no wordmark */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.6 }}
+              initial={{ opacity: 0, scale: 0.7 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.2, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-              style={{ fontSize: 44, lineHeight: 1, marginBottom: 20, color: "var(--c-accent)", position: "relative", zIndex: 1 }}
-            >{"\u263D"}</motion.div>
+              transition={{ delay: 0.2, duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
+              style={{ position: "relative", zIndex: 1, marginBottom: 32 }}
+            >
+              <svg width="120" height="160" viewBox="0 0 120 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+                {/* Arch */}
+                <path d="M24 148 L24 68 Q24 8 60 2 Q96 8 96 68 L96 148" stroke="var(--c-primary)" strokeWidth="2" strokeLinecap="round" opacity="0.6" />
+                <path d="M34 148 L34 72 Q34 20 60 12 Q86 20 86 72 L86 148" stroke="var(--c-primary)" strokeWidth="0.8" opacity="0.2" />
+                {/* Keystone */}
+                <circle cx="60" cy="2" r="3" fill="var(--c-accent)" opacity="0.8" />
+                {/* Base dots */}
+                <circle cx="24" cy="148" r="1.5" fill="var(--c-primary)" opacity="0.25" />
+                <circle cx="96" cy="148" r="1.5" fill="var(--c-primary)" opacity="0.25" />
+                {/* Crescent */}
+                <circle cx="60" cy="62" r="32" fill="var(--c-primary)" />
+                <circle cx="71" cy="52" r="26" fill="var(--c-bg)" />
+                {/* Stars */}
+                <circle cx="38" cy="30" r="2" fill="var(--c-primary)" opacity="0.35" style={{ animation: "sparkle 3s ease-in-out infinite" }} />
+                <circle cx="85" cy="36" r="1.6" fill="var(--c-primary)" opacity="0.3" style={{ animation: "sparkle 3s ease-in-out infinite 0.7s" }} />
+                <circle cx="78" cy="22" r="1.3" fill="var(--c-primary)" opacity="0.25" style={{ animation: "sparkle 3s ease-in-out infinite 1.4s" }} />
+              </svg>
+            </motion.div>
 
-            {/* App name */}
+            {/* App name — large, confident */}
             <motion.h1
-              initial={{ opacity: 0, y: 12 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-              className="shimmer-text"
-              style={{ fontFamily: "var(--font-heading)", fontSize: 42, fontWeight: 700, color: "var(--c-text)", lineHeight: 1, position: "relative", zIndex: 1, marginBottom: 12 }}
-            >Tila</motion.h1>
+              transition={{ delay: 0.8, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+              style={{ fontFamily: "var(--font-heading)", fontSize: 44, fontWeight: 400, letterSpacing: "0.12em", color: "var(--c-text)", lineHeight: 1, position: "relative", zIndex: 1, marginBottom: 8 }}
+            >tila</motion.h1>
+
+            {/* Brand motto */}
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.1, duration: 0.7 }}
+              style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--c-accent)", position: "relative", zIndex: 1, marginBottom: 24 }}
+            >Read Beautifully</motion.p>
 
             {/* Tagline */}
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 1.0, duration: 0.8 }}
-              style={{ fontSize: 16, color: "var(--c-text-soft)", fontWeight: 500, lineHeight: 1.5, textAlign: "center", maxWidth: 260, position: "relative", zIndex: 1, marginBottom: 8 }}
+              transition={{ delay: 1.5, duration: 0.8 }}
+              style={{ fontSize: 16, color: "var(--c-text-soft)", fontWeight: 400, lineHeight: 1.6, textAlign: "center", maxWidth: 260, position: "relative", zIndex: 1, marginBottom: 40 }}
             >Learn to read the Quran,{"\n"}one letter at a time.</motion.p>
-
-            {/* Arabic whisper */}
-            <motion.p
-              dir="rtl"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1.6, duration: 0.8 }}
-              style={{ fontFamily: "var(--font-arabic)", fontSize: 22, color: "var(--c-accent)", opacity: 0.6, marginTop: 4, marginBottom: 32, position: "relative", zIndex: 1 }}
-            >{"\u0627\u0642\u0652\u0631\u064E\u0623\u0652"}</motion.p>
 
             {/* CTA */}
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 2.0, duration: 0.6 }}
-              style={{ width: "100%", maxWidth: 320, position: "relative", zIndex: 1 }}
+              transition={{ delay: 1.8, duration: 0.6 }}
+              style={{ width: "100%", maxWidth: 300, position: "relative", zIndex: 1 }}
             >
-              <button className="btn btn-primary" onClick={goNext} style={{ width: "100%" }}>
+              <button className="btn btn-primary" onClick={goNext} style={{ width: "100%", fontSize: 16, padding: "16px 24px" }}>
                 Get Started
               </button>
             </motion.div>
@@ -284,130 +314,117 @@ export default function OnboardingScreen({ onComplete, onStartLesson1 }) {
 
         {/* ── STEP 1: SACRED — "Tilawat" ── */}
         {step === 1 && (
-          <motion.div key="sacred" style={styles.card} {...blurIn}>
-            <motion.div {...stagger(0.15)} style={styles.sacredFocal}>
-              <div style={styles.sacredGlow} />
-              <span style={styles.sacredArabic} dir="rtl">{"\u062A\u0650\u0644\u0627\u0648\u064E\u0629"}</span>
-            </motion.div>
+          <motion.div key="sacred" style={styles.splashRoot} {...blurIn}>
+            {/* Warm glow behind the Arabic */}
+            <motion.div
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
+              style={{ position: "absolute", width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle, rgba(196,164,100,0.15) 0%, rgba(196,164,100,0.04) 55%, transparent 72%)", pointerEvents: "none", animation: "noorBreath 4s ease-in-out infinite" }}
+            />
 
-            <motion.h1 {...stagger(0.3)} style={styles.headline}>
-              <StaggeredText text="To recite the Quran beautifully is" baseDelay={0.35} />
+            {/* Arabic calligraphy */}
+            <motion.span
+              {...stagger(0.15)}
+              dir="rtl"
+              style={{ fontFamily: "var(--font-arabic)", fontSize: 72, color: "var(--c-primary-dark)", lineHeight: 1, position: "relative", zIndex: 1, marginBottom: 28 }}
+            >{"\u062A\u0650\u0644\u0627\u0648\u064E\u0629"}</motion.span>
+
+            {/* Headline */}
+            <motion.h1 {...stagger(0.35)} style={{ fontFamily: "var(--font-heading)", fontSize: 22, fontWeight: 600, lineHeight: 1.4, color: "var(--c-text)", marginBottom: 10, letterSpacing: "-0.01em", textAlign: "center", position: "relative", zIndex: 1, maxWidth: 300 }}>
+              <StaggeredText text="To recite the Quran beautifully is" baseDelay={0.4} />
               <em className="shimmer-text" style={styles.tilaShimmer}> Tilawat</em>
             </motion.h1>
 
-            <motion.p {...stagger(0.7)} style={styles.body}>
-              Recite. Reflect. Return.
-            </motion.p>
+            {/* Motto */}
+            <motion.p
+              {...stagger(0.75)}
+              style={{ fontSize: 13, letterSpacing: "0.08em", color: "var(--c-text-muted)", marginBottom: 40, position: "relative", zIndex: 1 }}
+            >Recite. Reflect. Return.</motion.p>
 
-            <motion.div {...stagger(0.85)} style={styles.actions}>
-              <button className="btn btn-primary" onClick={goNext}>
+            {/* CTA */}
+            <motion.div {...stagger(0.9)} style={{ width: "100%", maxWidth: 300, position: "relative", zIndex: 1 }}>
+              <button className="btn btn-primary" onClick={goNext} style={{ width: "100%", fontSize: 16, padding: "16px 24px" }}>
                 Begin
               </button>
             </motion.div>
           </motion.div>
         )}
 
-        {/* ── STEP 2: HADITH — "Struggling is not failing" (full-bleed immersive) ── */}
+        {/* ── STEP 2: HADITH — "Struggling is not failing" ── */}
         {step === 2 && (
-          <motion.div key="hadith" style={styles.hadithRoot} {...scaleBlur}>
-            {/* Floating Arabic letters — three-layer depth system with staggered entrance */}
-            {floatingLetters.map((l, i) => (
-              <motion.span
-                key={i}
-                dir="rtl"
-                style={{
-                  position: "absolute",
-                  top: l.top,
-                  left: l.left,
-                  fontFamily: "var(--font-arabic)",
-                  fontSize: l.size,
-                  color: "var(--c-text)",
-                  pointerEvents: "none",
-                  userSelect: "none",
-                  willChange: "transform",
-                }}
-                initial={{ opacity: 0 }}
-                animate={{
-                  opacity: l.opacity,
-                  ...l.motion,
-                }}
-                transition={{
-                  opacity: { delay: l.entranceDelay, duration: 0.8, ease: [0.22, 1, 0.36, 1] },
-                  x: l.motion?.x ? { duration: l.floatDuration, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" } : undefined,
-                  y: l.motion?.y ? { duration: l.floatDuration, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" } : undefined,
-                  rotate: l.motion?.rotate ? { duration: l.floatDuration, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" } : undefined,
-                  scale: l.motion?.scale ? { duration: l.floatDuration, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" } : undefined,
-                }}
-              >
-                {l.char}
-              </motion.span>
-            ))}
+          <motion.div key="hadith" style={styles.splashRoot} {...scaleBlur}>
+            {/* Large ambient glow */}
+            <motion.div
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
+              style={{ position: "absolute", width: 340, height: 340, borderRadius: "50%", background: "radial-gradient(circle, rgba(196,164,100,0.12) 0%, rgba(196,164,100,0.04) 50%, transparent 70%)", pointerEvents: "none", animation: "noorBreath 5s ease-in-out infinite" }}
+            />
 
-            {/* Large ambient glow — 350px, positioned behind quote area, 6s breathe */}
-            <div style={styles.hadithGlow} />
+            {/* Arch outline — subtle brand frame */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.1, duration: 1.0 }}
+              style={{ position: "absolute", zIndex: 0, pointerEvents: "none" }}
+            >
+              <svg width="200" height="260" viewBox="0 0 200 260" fill="none">
+                <path d="M30 250 L30 100 Q30 10 100 2 Q170 10 170 100 L170 250" stroke="var(--c-accent)" strokeWidth="1" strokeLinecap="round" opacity="0.12" />
+              </svg>
+            </motion.div>
 
-            {/* Headline — slow fade + scale 0.97→1.0 */}
+            {/* Headline */}
             <motion.h1
-              style={styles.hadithHeadline}
-              initial={{ opacity: 0, scale: 0.97 }}
-              animate={{ opacity: 1, scale: 1.0 }}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+              style={{ fontFamily: "var(--font-heading)", fontSize: 28, fontWeight: 600, lineHeight: 1.3, color: "var(--c-text)", letterSpacing: "-0.02em", position: "relative", zIndex: 1, marginBottom: 20, fontStyle: "italic" }}
             >
               Struggling is not failing
             </motion.h1>
 
-            {/* Decorative gold diamond above quote */}
+            {/* Gold diamond separator */}
             <motion.div
-              style={styles.hadithDiamond}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.5 }}
-              transition={{ delay: 0.6, duration: 0.5 }}
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{ opacity: 0.6, scale: 1 }}
+              transition={{ delay: 0.7, duration: 0.4 }}
+              style={{ width: 6, height: 6, background: "var(--c-accent)", transform: "rotate(45deg)", marginBottom: 20, position: "relative", zIndex: 1 }}
             />
 
-            {/* Hadith quote — clean centered typography, inline quotation marks */}
-            <div style={styles.hadithQuoteBlock}>
-              <p style={styles.hadithQuoteText}>
-                <StaggeredText
-                  text={"\u201CThe one who struggles with the Qur\u2019an receives a double reward.\u201D"}
-                  baseDelay={0.8}
-                  style={{
-                    fontFamily: "var(--font-heading)",
-                    fontStyle: "italic",
-                    fontSize: 17,
-                    lineHeight: 1.65,
-                    color: "var(--c-text-soft)",
-                    textAlign: "center",
-                  }}
-                />
-              </p>
-            </div>
-
-            {/* Divider DRAWS from center outward, then source fades in */}
-            <div style={styles.hadithSourceBlock}>
-              <motion.div
-                style={styles.hadithDivider}
-                initial={{ scaleX: 0 }}
-                animate={{ scaleX: 1 }}
-                transition={{ delay: 2.1, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-              />
-              <motion.p
-                style={styles.hadithSource}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 2.4, duration: 0.4 }}
-              >
-                Sahih al-Bukhari 4937
-              </motion.p>
-            </div>
-
-            {/* Continue button — delayed 2.2s to force sitting with the hadith */}
+            {/* Hadith quote */}
             <motion.div
-              style={{ ...styles.actions, maxWidth: 380, padding: "0 28px" }}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 2.2, duration: 0.5 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.9, duration: 0.8 }}
+              style={{ position: "relative", zIndex: 1, maxWidth: 280, marginBottom: 20, textAlign: "center" }}
             >
-              <button className="btn btn-primary" onClick={goNext}>
+              <p style={{ fontFamily: "var(--font-heading)", fontStyle: "italic", fontSize: 17, lineHeight: 1.7, color: "var(--c-text-soft)", margin: 0 }}>
+                {"\u201C"}The one who struggles with the Qur{"\u2019"}an receives a double reward.{"\u201D"}
+              </p>
+            </motion.div>
+
+            {/* Source — divider + attribution */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.6, duration: 0.5 }}
+              style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, marginBottom: 40, position: "relative", zIndex: 1 }}
+            >
+              <div style={{ width: 28, height: 1, background: "var(--c-accent)", opacity: 0.4 }} />
+              <p style={{ fontFamily: "var(--font-body)", fontSize: 10, color: "var(--c-text-muted)", textTransform: "uppercase", letterSpacing: "0.12em", margin: 0 }}>
+                Sahih al-Bukhari 4937
+              </p>
+            </motion.div>
+
+            {/* CTA */}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.9, duration: 0.5 }}
+              style={{ width: "100%", maxWidth: 300, position: "relative", zIndex: 1 }}
+            >
+              <button className="btn btn-primary" onClick={goNext} style={{ width: "100%", fontSize: 16, padding: "16px 24px" }}>
                 Continue
               </button>
             </motion.div>
@@ -783,7 +800,8 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "flex-start",
+    paddingTop: "18vh",
     position: "relative",
   },
   splashGlow: {

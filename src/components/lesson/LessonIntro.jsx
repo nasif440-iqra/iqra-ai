@@ -42,7 +42,7 @@ export default function LessonIntro({ lesson, teachLetters, lessonCombos, isSoun
               <span style={{ fontFamily: "var(--font-arabic)", fontSize: 32, color: "var(--c-primary-dark)" }}>{"\u0628\u064E"}</span>
               <span style={{ fontSize: 14, fontWeight: 700, color: "var(--c-primary)" }}>{"\u201C"}ba{"\u201D"}</span>
             </div>
-            <button className="btn btn-ghost" onClick={() => playGeneratedArabicAudio("\u0628\u064E")} style={{ fontSize: 12, color: "var(--c-accent)", marginTop: 8, padding: "6px 14px" }}><Icons.Volume size={14} color="var(--c-accent)" /> Hear {"\u201C"}ba{"\u201D"}</button>
+            <button className="hear-btn hear-btn--sm" onClick={() => playGeneratedArabicAudio("\u0628\u064E")} style={{ marginTop: 8 }}><span className="hear-icon" /><span>Hear {"\u201C"}ba{"\u201D"}</span></button>
           </div>
           {lesson.familyRule && <p style={{ fontSize: 13, color: "var(--c-text-soft)", lineHeight: 1.5, maxWidth: 300, textAlign: "center", marginTop: 8 }}>{lesson.familyRule}</p>}
         </div>
@@ -66,14 +66,47 @@ export default function LessonIntro({ lesson, teachLetters, lessonCombos, isSoun
           <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "var(--c-accent-light)", padding: "5px 14px", borderRadius: 16, marginBottom: 16 }}>
             <span style={{ fontSize: 12, fontWeight: 700, color: "var(--c-accent)" }}>{"\u25CC\u064E"} Harakat Lesson</span>
           </div>
-          <div className="scale-in" style={{ display: "flex", gap: 14, justifyContent: "center", marginBottom: 16, flexWrap: "wrap" }}>
-            {displayCombos.map(c => (
-              <div key={c.id} style={{ textAlign: "center", cursor: "pointer" }} onClick={() => playGeneratedArabicAudio(c.audioText)}>
-                <span style={{ fontFamily: "var(--font-arabic)", fontSize: 48, lineHeight: 1.6, color: "var(--c-primary-dark)", display: "block" }}>{c.display}</span>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, marginTop: 4 }}><Icons.Volume size={14} color="var(--c-accent)" /><span style={{ fontSize: 13, fontWeight: 700, color: "var(--c-accent)" }}>{"\u201C"}{c.sound}{"\u201D"}</span></div>
+          {(() => {
+            // Group combos by base letter for organized rows
+            const grouped = [];
+            const seen = new Map();
+            for (const c of displayCombos) {
+              if (!seen.has(c.letterId)) { seen.set(c.letterId, grouped.length); grouped.push([]); }
+              grouped[seen.get(c.letterId)].push(c);
+            }
+            const comboCount = displayCombos.length;
+            const circleSize = comboCount > 6 ? 56 : comboCount > 3 ? 68 : 80;
+            const arabicSize = comboCount > 6 ? 28 : comboCount > 3 ? 34 : 40;
+
+            return (
+              <div className="scale-in" style={{ display: "flex", flexDirection: "column", gap: 20, alignItems: "center", marginBottom: 20 }}>
+                {grouped.map((row, ri) => (
+                  <div key={ri} style={{ display: "flex", gap: comboCount > 6 ? 10 : 16, justifyContent: "center" }}>
+                    {row.map(c => (
+                      <div key={c.id} style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center" }}>
+                        <div style={{
+                          width: circleSize, height: circleSize, borderRadius: "50%",
+                          background: "#F2F5F3", border: "2px solid white",
+                          boxShadow: "inset 0 2px 6px rgba(0,0,0,0.06)",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          marginBottom: 6,
+                        }}>
+                          <span style={{ fontFamily: "var(--font-arabic)", fontSize: arabicSize, lineHeight: 1, color: "var(--c-primary-dark)", marginTop: 4 }} dir="rtl">{c.display}</span>
+                        </div>
+                        <button
+                          className="hear-btn hear-btn--sm"
+                          onClick={() => playGeneratedArabicAudio(c.audioText)}
+                        >
+                          <span className="hear-icon" />
+                          <span>{"\u201C"}{c.sound}{"\u201D"}</span>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            );
+          })()}
           {lesson.familyRule && <p style={{ fontSize: 13, color: "var(--c-text-soft)", lineHeight: 1.5, maxWidth: 300, textAlign: "center", marginTop: 4 }}>{lesson.familyRule}</p>}
         </div>
         <div style={{ paddingBottom: 24 }}>
@@ -118,32 +151,37 @@ export default function LessonIntro({ lesson, teachLetters, lessonCombos, isSoun
           {teachLetters.map(l => (
             <div
               key={l.id}
-              style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", cursor: hasAudio ? "pointer" : "default" }}
-              onClick={hasAudio ? () => playLetterAudio(l.id, audioType) : undefined}
+              style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center" }}
             >
               <div style={{
                 width: circleSize, height: circleSize, borderRadius: "50%",
                 background: "#F2F5F3", border: "2px solid white",
                 boxShadow: "inset 0 2px 6px rgba(0,0,0,0.06)",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                marginBottom: isLargeGrid ? 4 : 8,
+                marginBottom: isLargeGrid ? 4 : 10,
               }}>
                 <span style={{ fontFamily: "var(--font-arabic)", fontSize, lineHeight: 1, color: "var(--c-text)", marginTop: isLargeGrid ? 2 : 4 }} dir="rtl">{l.letter}</span>
               </div>
-              <div style={{ fontSize: isLargeGrid ? 10 : 13, fontWeight: 600, marginTop: 2 }}>{l.name}</div>
-              {!(isSound || isContrast || isCheckpoint) && (
-                <div style={{ display: "inline-flex", background: "var(--c-primary-soft)", padding: "2px 8px", borderRadius: 10, marginTop: 3 }}>
-                  <span style={{ fontSize: 10, fontWeight: 700, color: "var(--c-primary)" }}>{l.visualRule}</span>
+              <div style={{ fontSize: isLargeGrid ? 10 : 14, fontWeight: 600, color: "var(--c-text)", marginBottom: isLargeGrid ? 4 : 8 }}>{l.name}</div>
+              {isLargeGrid ? (
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: 4, cursor: "pointer" }}
+                  onClick={() => playLetterAudio(l.id, audioType)}
+                >
+                  <span style={{ width: 0, height: 0, borderLeft: "5px solid var(--c-accent)", borderTop: "3px solid transparent", borderBottom: "3px solid transparent", flexShrink: 0 }} />
+                  <span style={{ fontSize: 10, fontWeight: 600, color: "var(--c-accent)" }}>
+                    {(isSound || isContrast || isCheckpoint) ? l.transliteration : "Hear"}
+                  </span>
                 </div>
+              ) : (
+                <button
+                  className="hear-btn hear-btn--sm"
+                  onClick={() => playLetterAudio(l.id, audioType)}
+                >
+                  <span className="hear-icon" />
+                  <span>{(isSound || isContrast || isCheckpoint) ? `"${l.transliteration}"` : "Hear it"}</span>
+                </button>
               )}
-              <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 4 }}>
-                <Icons.Volume size={isLargeGrid ? 12 : 14} color="var(--c-accent)" />
-                <span style={{ fontSize: isLargeGrid ? 10 : 12, fontWeight: 600, color: "var(--c-accent)" }}>
-                  {(isSound || isContrast || isCheckpoint)
-                    ? (isLargeGrid ? l.transliteration : `"${l.transliteration}"`)
-                    : l.name}
-                </span>
-              </div>
             </div>
           ))}
         </motion.div>

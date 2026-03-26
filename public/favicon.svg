@@ -1,0 +1,18 @@
+<svg width="192" height="192" viewBox="0 0 192 192" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    @keyframes fmb{0%,100%{filter:brightness(1)}50%{filter:brightness(1.15)}}
+    @keyframes fag{0%,100%{opacity:.7}50%{opacity:1}}
+    .fcm{animation:fmb 5s ease-in-out infinite}
+    .fao{animation:fag 4s ease-in-out infinite}
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; } }
+  </style>
+  <rect x="0" y="0" width="192" height="192" rx="42" fill="#163323"/>
+  <g class="fcm" style="transform-origin:96px 82px">
+    <circle cx="96" cy="82" r="36" fill="#C4A464"/>
+    <circle cx="109" cy="72" r="29" fill="#163323"/>
+  </g>
+  <path class="fao" d="M61 170 L61 97 Q61 18 96 10 Q131 18 131 97 L131 170" fill="none" stroke="#C4A464" stroke-width="2.5" stroke-linecap="round" opacity="0.85"/>
+  <circle cx="96" cy="8" r="3" fill="#C4A464" opacity="0.9"/>
+  <circle cx="61" cy="170" r="2" fill="#C4A464" opacity="0.35"/>
+  <circle cx="131" cy="170" r="2" fill="#C4A464" opacity="0.35"/>
+</svg>

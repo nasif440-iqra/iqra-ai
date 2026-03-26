@@ -207,6 +207,51 @@ button.quiz-option {
 }
 
 /* Segmented progress bar */
+/* ── Hear button — pill-shaped audio play ── */
+.hear-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  border: 1.5px solid var(--c-accent);
+  background: transparent;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--c-text);
+  transition: background var(--dur-fast) var(--ease-default), border-color var(--dur-fast) var(--ease-default);
+  -webkit-tap-highlight-color: transparent;
+}
+.hear-btn:active { background: var(--c-accent-light); }
+.hear-btn:focus-visible { outline: 2px solid var(--c-primary); outline-offset: 2px; }
+.hear-btn .hear-icon {
+  width: 0;
+  height: 0;
+  border-left: 7px solid var(--c-accent);
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  flex-shrink: 0;
+}
+.hear-btn--sm { padding: 6px 14px; font-size: 12px; }
+.hear-btn--sm .hear-icon { border-left-width: 6px; border-top-width: 4px; border-bottom-width: 4px; }
+.hear-btn--danger { border-color: var(--c-danger); }
+.hear-btn--danger .hear-icon { border-left-color: var(--c-danger); }
+.hear-btn--danger:active { background: var(--c-danger-light); }
+/* Large circular play — for quiz audio questions */
+.hear-btn--circle {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  padding: 0;
+  justify-content: center;
+  border-width: 2px;
+  background: var(--c-accent-light);
+  box-shadow: 0 2px 12px rgba(196,164,100,0.15);
+}
+.hear-btn--circle .hear-icon { border-left-width: 14px; border-top-width: 10px; border-bottom-width: 10px; margin-left: 4px; }
+
 .ob-progress-track {
   height: 4px;
   flex: 1;
