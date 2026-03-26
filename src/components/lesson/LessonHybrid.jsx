@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Icons } from "../Icons.jsx";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import useLessonHybrid from "./useLessonHybrid.js";
 import GuidedReveal from "./GuidedReveal.jsx";
 import BuildUpReader from "./BuildUpReader.jsx";
@@ -8,6 +8,8 @@ import FreeReader from "./FreeReader.jsx";
 import TapInOrder from "./TapInOrder.jsx";
 import SpotTheBreak from "./SpotTheBreak.jsx";
 import LessonSummary from "./LessonSummary.jsx";
+import { getLetter } from "../../data/letters.js";
+import { sfxCorrect, sfxWrong } from "../../lib/audio.js";
 
 const STAGE_LABELS = {
   guided: "Learning",
@@ -54,15 +56,62 @@ function StageIndicator({ stage }) {
 }
 
 function ComprehensionExercise({ exercise, onComplete }) {
-  const [selected, setSelected] = useState(null);
-  const { prompt, displayArabic, options = [] } = exercise;
+  const [selectedId, setSelectedId] = useState(null);
+  const [answered, setAnswered] = useState(false);
+  const [isCorrect, setIsCorrect] = useState(null);
+  const { prompt, displayArabic, options = [], targetId } = exercise;
 
-  function handleSelect(option) {
-    if (selected !== null) return;
-    setSelected(option);
+  // Detect if options contain Arabic text (unicode range check or optionMode)
+  const hasArabicOptions = options.some(o => o.label && /[\u0600-\u06FF\uFE70-\uFEFF]/.test(o.label));
+  const optCount = options.length;
+  const isCompact = optCount <= 2;
+  const isTriple = optCount === 3;
+  const gridStyle = isCompact
+    ? { display: "flex", flexDirection: "column", gap: 16, width: "100%", maxWidth: 340 }
+    : isTriple
+      ? { display: "flex", flexWrap: "wrap", gap: 14, width: "100%", maxWidth: 340, justifyContent: "center" }
+      : { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, width: "100%", maxWidth: 340 };
+  const optMinHeight = hasArabicOptions ? 90 : 60;
+
+  const handleSelect = useCallback((option) => {
+    if (answered) return;
     const correct = option.isCorrect === true;
-    onComplete({ correct, selectedOption: option });
-  }
+    setSelectedId(option.id);
+    setAnswered(true);
+    setIsCorrect(correct);
+    if (correct) {
+      sfxCorrect();
+      setTimeout(() => onComplete({ correct: true, selectedOption: option }), 850);
+    } else {
+      sfxWrong();
+      // Don't auto-advance — wait for "Got it" button
+    }
+  }, [answered, onComplete]);
+
+  const handleGotIt = useCallback(() => {
+    const option = options.find(o => o.id === selectedId);
+    onComplete({ correct: false, selectedOption: option });
+  }, [options, selectedId, onComplete]);
+
+  // Build wrong-answer explanation for letter identification questions
+  const wrongExplanation = (() => {
+    if (!answered || isCorrect) return null;
+    if (typeof selectedId !== "number" || typeof targetId !== "number") return null;
+    const chosenLetter = getLetter(selectedId);
+    const correctLetter = getLetter(targetId);
+    if (!chosenLetter || !correctLetter) return null;
+    const chosenPart = chosenLetter.visualRule
+      ? `${chosenLetter.name} — ${chosenLetter.visualRule}`
+      : chosenLetter.name;
+    const correctPart = correctLetter.visualRule
+      ? `${correctLetter.name} — ${correctLetter.visualRule}`
+      : correctLetter.name;
+    return `That's ${chosenPart}. The correct answer is ${correctPart}.`;
+  })();
+
+  const chosenLetter = answered && !isCorrect && typeof selectedId === "number" ? getLetter(selectedId) : null;
+  const correctLetter = answered && !isCorrect && typeof targetId === "number" ? getLetter(targetId) : null;
+  const showVisualCompare = chosenLetter && correctLetter && chosenLetter.id !== correctLetter.id;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", gap: 16 }}>
@@ -78,43 +127,116 @@ function ComprehensionExercise({ exercise, onComplete }) {
       <p style={{ fontSize: 17, fontWeight: 600, color: "var(--c-text)", textAlign: "center", marginBottom: 8 }}>
         {prompt}
       </p>
-      <div style={{ display: "flex", flexDirection: "column", gap: 10, width: "100%" }}>
-        {options.map((option, i) => {
-          const isSelected = selected === option;
-          const isAnswered = selected !== null;
-          let optionStyle = {};
-          if (isAnswered) {
-            if (option.isCorrect) {
-              optionStyle = {
-                background: "var(--c-primary-soft)",
-                borderColor: "var(--c-primary)",
-                color: "var(--c-primary)",
-              };
-            } else if (isSelected && !option.isCorrect) {
-              optionStyle = {
-                background: "var(--c-danger-light)",
-                borderColor: "var(--c-danger)",
-                color: "var(--c-danger)",
-              };
-            }
+      <motion.div
+        variants={{ show: { transition: { staggerChildren: 0.07 } } }}
+        initial="hidden"
+        animate="show"
+        style={gridStyle}
+      >
+        {options.map((option) => {
+          let cls = "quiz-option";
+          if (answered) {
+            if (option.id === selectedId && isCorrect) cls += " correct";
+            else if (option.id === selectedId && !isCorrect) cls += " wrong";
+            else if (option.isCorrect && !isCorrect) cls += " revealed-correct";
+            else cls += " disabled";
           }
+          const isSelectedCorrect = answered && option.id === selectedId && isCorrect;
+          const isSelectedWrong = answered && option.id === selectedId && !isCorrect;
+          const isOptionArabic = option.label && /[\u0600-\u06FF\uFE70-\uFEFF]/.test(option.label);
           return (
-            <button
-              key={i}
-              className="quiz-option"
-              onClick={() => handleSelect(option)}
-              disabled={isAnswered}
-              style={{
-                width: "100%",
-                textAlign: "center",
-                ...optionStyle,
+            <motion.button
+              key={option.id}
+              variants={{
+                hidden: { opacity: 0, y: 16 },
+                show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 28 } },
               }}
+              whileHover={!answered ? { scale: 1.02, borderColor: "var(--c-primary)", transition: { type: "spring", stiffness: 400, damping: 30 } } : undefined}
+              whileTap={!answered ? { scale: 0.94 } : undefined}
+              {...(isSelectedCorrect ? {
+                animate: { backgroundColor: ["#FFFFFF", "#E8F0EB", "#E8F0EB"], scale: [1, 1.04, 1] },
+                transition: { duration: 0.4, times: [0, 0.3, 1] },
+              } : isSelectedWrong ? {
+                animate: { x: [-6, 6, -5, 5, -3, 3, 0] },
+                transition: { duration: 0.4, ease: "easeOut" },
+              } : {
+                transition: { type: "spring", stiffness: 400, damping: 25 },
+              })}
+              className={cls}
+              onClick={() => handleSelect(option)}
+              disabled={answered}
+              style={{ textAlign: "center", position: "relative", minHeight: optMinHeight, padding: isOptionArabic ? "20px 12px" : "18px 12px", ...(isTriple ? { width: "calc(50% - 7px)", flexShrink: 0 } : {}) }}
             >
-              {option.label}
-            </button>
+              <span style={{
+                fontFamily: isOptionArabic ? "var(--font-arabic)" : "var(--font-body)",
+                fontSize: isOptionArabic ? 48 : 17,
+                fontWeight: isOptionArabic ? 400 : 700,
+                lineHeight: isOptionArabic ? 1.5 : 1,
+                color: (answered && option.isCorrect) ? "var(--c-primary-dark)" : (answered && option.id === selectedId && !isCorrect) ? "var(--c-danger)" : "var(--c-text)",
+              }}>{option.label}</span>
+              <AnimatePresence>
+                {isSelectedCorrect && (
+                  <motion.span
+                    initial={{ opacity: 1, y: 0, scale: 0.8 }}
+                    animate={{ opacity: 0, y: -56, scale: 1.3 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.65, ease: [0.2, 0.8, 0.4, 1] }}
+                    style={{
+                      position: "absolute", top: -8, left: "50%", marginLeft: -10,
+                      color: "gold", fontWeight: 700, fontSize: 18, pointerEvents: "none",
+                    }}
+                  >
+                    +1
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </motion.button>
           );
         })}
-      </div>
+      </motion.div>
+
+      <AnimatePresence>
+        {answered && !isCorrect && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            style={{
+              background: "var(--c-danger-light)",
+              borderRadius: 20,
+              padding: "16px 18px",
+              display: "flex",
+              flexDirection: "column",
+              gap: 12,
+              width: "100%",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+              <Icons.X size={18} color="var(--c-danger)" style={{ marginTop: 1, flexShrink: 0 }} />
+              <span style={{ fontSize: 13.5, fontWeight: 600, color: "#7a2e2b", lineHeight: 1.5 }}>
+                {wrongExplanation || "Not quite — the correct answer is highlighted above."}
+              </span>
+            </div>
+            {showVisualCompare && (
+              <div style={{ display: "flex", justifyContent: "center", gap: 20, padding: "8px 0 4px" }}>
+                <div style={{ textAlign: "center", opacity: 0.5 }}>
+                  <span style={{ fontFamily: "var(--font-arabic)", fontSize: 32, color: "var(--c-danger)", display: "block", lineHeight: 1.4 }}>{chosenLetter.letter}</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: "#7a2e2b" }}>{chosenLetter.name}</span>
+                  {chosenLetter.visualRule && <span style={{ fontSize: 9, color: "#7a2e2b", display: "block", opacity: 0.7 }}>{chosenLetter.visualRule}</span>}
+                </div>
+                <div style={{ display: "flex", alignItems: "center", fontSize: 14, color: "var(--c-text-muted)" }}>{"→"}</div>
+                <div style={{ textAlign: "center" }}>
+                  <span style={{ fontFamily: "var(--font-arabic)", fontSize: 32, color: "var(--c-primary)", display: "block", lineHeight: 1.4 }}>{correctLetter.letter}</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: "var(--c-primary)" }}>{correctLetter.name}</span>
+                  {correctLetter.visualRule && <span style={{ fontSize: 9, color: "var(--c-primary)", display: "block", opacity: 0.8 }}>{correctLetter.visualRule}</span>}
+                </div>
+              </div>
+            )}
+            <button className="btn btn-primary" onClick={handleGotIt} style={{ fontSize: 14, marginTop: 2 }}>Got It</button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -157,7 +279,12 @@ export default function LessonHybrid({
     hybrid.recordResult(result);
     const isGuided = currentStage === "guided";
     const isBuildup = currentStage === "buildup";
-    if (isGuided || isBuildup) {
+    const isComprehension = currentExercise?.type === "comprehension";
+    if (isComprehension) {
+      // ComprehensionExercise manages its own timing (850ms auto-advance on correct,
+      // "Got it" button on wrong) — advance immediately when onComplete fires
+      hybrid.advance();
+    } else if (isGuided || isBuildup) {
       setTimeout(() => hybrid.advance(), 300);
     } else {
       hybrid.advance();

@@ -67,19 +67,27 @@ describe("generateConnectedFormExercises", () => {
       expect(correct.length).toBe(1);
     });
 
-    it("includes a family comparison comprehension for multi-letter lessons", () => {
-      const lesson = makeLesson({ teachIds: [2, 3, 4] });
+    it("generates at least 10 exercises for family lessons", () => {
+      const lesson = makeLesson({ module: "4.2", teachIds: [2, 3, 4] });
       const result = generateConnectedFormExercises(lesson);
-      const comps = result.filter(e => e.type === "comprehension");
-      // Standard lesson with 3 teachIds: 3 position comprehensions + 1 family comparison
-      expect(comps.length).toBeGreaterThanOrEqual(2);
+      // Family: 3 guided + 3 contrast + 2 position + 2 mixed + 2-3 review
+      expect(result.length).toBeGreaterThanOrEqual(10);
     });
 
-    it("does not generate a family comparison for single-letter lessons", () => {
-      const lesson = makeLesson({ teachIds: [2] });
+    it("includes family contrast exercises for multi-letter lessons", () => {
+      const lesson = makeLesson({ module: "4.2", teachIds: [2, 3, 4] });
       const result = generateConnectedFormExercises(lesson);
-      // Single-letter: 1 guided_reveal + 1 position comprehension = 2
-      expect(result.length).toBe(2);
+      const contrasts = result.filter(e =>
+        e.type === "comprehension" && e.prompt === "Which letter is this in its connected form?"
+      );
+      expect(contrasts.length).toBeGreaterThanOrEqual(2);
+    });
+
+    it("generates at least 8 exercises for single-letter lessons", () => {
+      const lesson = makeLesson({ module: "4.1", teachIds: [2] });
+      const result = generateConnectedFormExercises(lesson);
+      // Single-letter: 1 guided + 2 position + 2 reverse + 1 context + 2 free + 2-3 review
+      expect(result.length).toBeGreaterThanOrEqual(8);
     });
 
     it("works for non-connector letters (e.g. Alif id=1)", () => {
@@ -95,6 +103,45 @@ describe("generateConnectedFormExercises", () => {
       const result = generateConnectedFormExercises(lesson);
       const reveal = result.find(e => e.type === "guided_reveal");
       expect(reveal.explanation).toContain("connects on both sides");
+    });
+
+    it("includes review questions for modules 4.1–4.17", () => {
+      const lesson = makeLesson({ module: "4.1", teachIds: [2] });
+      const result = generateConnectedFormExercises(lesson);
+      const reviews = result.filter(e =>
+        e.type === "comprehension" && e.prompt.startsWith("Review:")
+      );
+      expect(reviews.length).toBeGreaterThanOrEqual(2);
+    });
+
+    it("does NOT include review questions for module 4.0", () => {
+      const lesson = makeLesson({ module: "4.0" });
+      const result = generateConnectedFormExercises(lesson);
+      const reviews = result.filter(e =>
+        e.type === "comprehension" && typeof e.prompt === "string" && e.prompt.startsWith("Review:")
+      );
+      expect(reviews.length).toBe(0);
+    });
+
+    it("does NOT include review questions for module 4.20", () => {
+      const lesson = makeLesson({ module: "4.20" });
+      const result = generateConnectedFormExercises(lesson);
+      const reviews = result.filter(e =>
+        e.type === "comprehension" && typeof e.prompt === "string" && e.prompt.startsWith("Review:")
+      );
+      expect(reviews.length).toBe(0);
+    });
+
+    it("review questions have exactly one correct option", () => {
+      const lesson = makeLesson({ module: "4.2", teachIds: [2, 3, 4] });
+      const result = generateConnectedFormExercises(lesson);
+      const reviews = result.filter(e =>
+        e.type === "comprehension" && e.prompt.startsWith("Review:")
+      );
+      for (const r of reviews) {
+        const correct = r.options.filter(o => o.isCorrect);
+        expect(correct.length).toBe(1);
+      }
     });
   });
 

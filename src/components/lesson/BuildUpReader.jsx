@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { playGeneratedArabicAudio } from "../../lib/tts.js";
-import { playLetterAudio } from "../../lib/audio.js";
+import { playLetterAudio, sfxTap } from "../../lib/audio.js";
 
 /**
  * BuildUpReader — shows a word being constructed right-to-left, one segment at a time.
@@ -56,6 +56,7 @@ export default function BuildUpReader({ exercise, onComplete }) {
   }
 
   function handleNext() {
+    sfxTap();
     if (isFullWord) {
       onComplete({ correct: true, targetId: segments[0]?.letterId });
     } else {

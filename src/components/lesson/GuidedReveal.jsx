@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getLetter } from "../../data/letters.js";
 import { getConnectedForms } from "../../data/connectedForms.js";
-import { playLetterAudio } from "../../lib/audio.js";
+import { playLetterAudio, sfxTap } from "../../lib/audio.js";
 import { Icons } from "../Icons.jsx";
 
 const POSITION_LABELS = {
@@ -41,6 +41,7 @@ export default function GuidedReveal({ exercise, onComplete }) {
   const showContextWord = isFullyRevealed && contextWord;
 
   function handleNext() {
+    sfxTap();
     if (!isFullyRevealed) {
       setRevealedIndex(i => i + 1);
     } else {
@@ -69,7 +70,7 @@ export default function GuidedReveal({ exercise, onComplete }) {
           <span
             style={{
               fontFamily: "var(--font-arabic)",
-              fontSize: 52,
+              fontSize: 72,
               lineHeight: 1.2,
               color: "var(--c-primary-dark)",
             }}
@@ -94,10 +95,11 @@ export default function GuidedReveal({ exercise, onComplete }) {
       <div
         style={{
           display: "flex",
-          gap: 8,
+          gap: 12,
           justifyContent: "center",
           flexWrap: "wrap",
           width: "100%",
+          paddingBottom: 8,
         }}
       >
         {positions.map((pos, idx) => {
@@ -123,9 +125,10 @@ export default function GuidedReveal({ exercise, onComplete }) {
                 flexDirection: "column",
                 alignItems: "center",
                 gap: 6,
-                padding: "12px 14px",
+                padding: "14px 16px",
                 borderRadius: 16,
-                minWidth: 64,
+                minWidth: 76,
+                minHeight: 76,
                 border: isCurrent
                   ? "2px solid var(--c-primary)"
                   : isRevealed
@@ -153,7 +156,7 @@ export default function GuidedReveal({ exercise, onComplete }) {
                     transition={{ type: "spring", stiffness: 300, damping: 20 }}
                     style={{
                       fontFamily: "var(--font-arabic)",
-                      fontSize: 30,
+                      fontSize: 38,
                       lineHeight: 1.3,
                       color: isCurrent ? "#fff" : "var(--c-primary-dark)",
                     }}
@@ -177,7 +180,7 @@ export default function GuidedReveal({ exercise, onComplete }) {
               </AnimatePresence>
               <span
                 style={{
-                  fontSize: 11,
+                  fontSize: 9,
                   fontWeight: 700,
                   textTransform: "uppercase",
                   letterSpacing: 0.5,
