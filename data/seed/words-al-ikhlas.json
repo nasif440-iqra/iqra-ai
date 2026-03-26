@@ -51,14 +51,14 @@
     "ayah_number": 1,
     "word_position": 3,
     "quran_frequency": 2699,
-    "min_phase": 6,
+    "min_phase": 7,
     "difficulty_tier": 3,
     "prerequisite_letter_ids": [1, 23, 26],
     "prerequisite_symbols": ["shaddah", "fatha", "damma"],
     "suitable_types": ["free_reading"],
     "skill_buckets": ["connected_decoding", "al_recognition"],
     "letter_breakdown": [
-      { "letter_id": 1, "position": "initial", "diacritical": null, "tajweed_rules": ["alif_lam"] },
+      { "letter_id": 1, "position": "isolated", "diacritical": null, "tajweed_rules": ["alif_lam"] },
       { "letter_id": 23, "position": "medial", "diacritical": null, "tajweed_rules": ["alif_lam"] },
       { "letter_id": 23, "position": "medial", "diacritical": "shaddah_fatha", "tajweed_rules": ["shaddah"] },
       { "letter_id": 26, "position": "final", "diacritical": "damma", "tajweed_rules": [] }
@@ -74,16 +74,16 @@
     "ayah_number": 1,
     "word_position": 4,
     "quran_frequency": 86,
-    "min_phase": 6,
+    "min_phase": 7,
     "difficulty_tier": 3,
     "prerequisite_letter_ids": [1, 6, 8],
-    "prerequisite_symbols": ["fatha", "tanwin_damm", "hamzah"],
+    "prerequisite_symbols": ["fatha", "tanween_damma", "hamzah"],
     "suitable_types": ["free_reading"],
     "skill_buckets": ["connected_decoding", "hamzah_reading"],
     "letter_breakdown": [
-      { "letter_id": 1, "position": "initial", "diacritical": "fatha", "tajweed_rules": ["hamzah_above"] },
+      { "letter_id": 1, "position": "isolated", "diacritical": "fatha", "tajweed_rules": ["hamzah_above"] },
       { "letter_id": 6, "position": "medial", "diacritical": "fatha", "tajweed_rules": [] },
-      { "letter_id": 8, "position": "final", "diacritical": "tanwin_damm", "tajweed_rules": [] }
+      { "letter_id": 8, "position": "final", "diacritical": "tanween_damma", "tajweed_rules": [] }
     ]
   },
   {
@@ -96,14 +96,14 @@
     "ayah_number": 2,
     "word_position": 1,
     "quran_frequency": 2699,
-    "min_phase": 6,
+    "min_phase": 7,
     "difficulty_tier": 3,
     "prerequisite_letter_ids": [1, 23, 26],
     "prerequisite_symbols": ["shaddah", "fatha", "damma"],
     "suitable_types": ["free_reading"],
     "skill_buckets": ["connected_decoding", "al_recognition"],
     "letter_breakdown": [
-      { "letter_id": 1, "position": "initial", "diacritical": null, "tajweed_rules": ["alif_lam"] },
+      { "letter_id": 1, "position": "isolated", "diacritical": null, "tajweed_rules": ["alif_lam"] },
       { "letter_id": 23, "position": "medial", "diacritical": null, "tajweed_rules": ["alif_lam"] },
       { "letter_id": 23, "position": "medial", "diacritical": "shaddah_fatha", "tajweed_rules": ["shaddah"] },
       { "letter_id": 26, "position": "final", "diacritical": "damma", "tajweed_rules": [] }
@@ -119,14 +119,14 @@
     "ayah_number": 2,
     "word_position": 2,
     "quran_frequency": 1,
-    "min_phase": 6,
+    "min_phase": 7,
     "difficulty_tier": 4,
     "prerequisite_letter_ids": [1, 23, 14, 24, 8],
     "prerequisite_symbols": ["sukoon", "shaddah", "fatha", "damma"],
     "suitable_types": ["free_reading"],
     "skill_buckets": ["connected_decoding", "al_recognition", "emphatic_letters"],
     "letter_breakdown": [
-      { "letter_id": 1, "position": "initial", "diacritical": null, "tajweed_rules": ["alif_lam_shamsiyyah"] },
+      { "letter_id": 1, "position": "isolated", "diacritical": null, "tajweed_rules": ["alif_lam_shamsiyyah"] },
       { "letter_id": 23, "position": "medial", "diacritical": "sukoon", "tajweed_rules": ["alif_lam_shamsiyyah"] },
       { "letter_id": 14, "position": "medial", "diacritical": "shaddah_fatha", "tajweed_rules": ["shaddah"] },
       { "letter_id": 24, "position": "medial", "diacritical": "fatha", "tajweed_rules": [] },
@@ -193,7 +193,7 @@
     "suitable_types": ["buildup", "free_reading"],
     "skill_buckets": ["connected_decoding"],
     "letter_breakdown": [
-      { "letter_id": 27, "position": "initial", "diacritical": "fatha", "tajweed_rules": [] },
+      { "letter_id": 27, "position": "isolated", "diacritical": "fatha", "tajweed_rules": [] },
       { "letter_id": 23, "position": "medial", "diacritical": "fatha", "tajweed_rules": [] },
       { "letter_id": 24, "position": "final", "diacritical": "sukoon", "tajweed_rules": [] }
     ]
@@ -238,7 +238,7 @@
     "suitable_types": ["buildup", "free_reading"],
     "skill_buckets": ["connected_decoding"],
     "letter_breakdown": [
-      { "letter_id": 27, "position": "initial", "diacritical": "fatha", "tajweed_rules": [] },
+      { "letter_id": 27, "position": "isolated", "diacritical": "fatha", "tajweed_rules": [] },
       { "letter_id": 23, "position": "medial", "diacritical": "fatha", "tajweed_rules": [] },
       { "letter_id": 24, "position": "final", "diacritical": "sukoon", "tajweed_rules": [] }
     ]
@@ -299,13 +299,13 @@
     "min_phase": 6,
     "difficulty_tier": 4,
     "prerequisite_letter_ids": [22, 20, 27, 1],
-    "prerequisite_symbols": ["damma", "tanwin_damm"],
+    "prerequisite_symbols": ["damma", "tanween_damma"],
     "suitable_types": ["free_reading"],
     "skill_buckets": ["connected_decoding", "madd_reading"],
     "letter_breakdown": [
       { "letter_id": 22, "position": "initial", "diacritical": "damma", "tajweed_rules": [] },
       { "letter_id": 20, "position": "medial", "diacritical": "damma", "tajweed_rules": [] },
-      { "letter_id": 27, "position": "medial", "diacritical": "tanwin_damm", "tajweed_rules": ["madd_iwad"] },
+      { "letter_id": 27, "position": "medial", "diacritical": "tanween_damma", "tajweed_rules": ["madd_iwad"] },
       { "letter_id": 1, "position": "final", "diacritical": null, "tajweed_rules": [] }
     ]
   },
@@ -319,16 +319,16 @@
     "ayah_number": 4,
     "word_position": 5,
     "quran_frequency": 86,
-    "min_phase": 6,
+    "min_phase": 7,
     "difficulty_tier": 3,
     "prerequisite_letter_ids": [1, 6, 8],
-    "prerequisite_symbols": ["fatha", "tanwin_damm", "hamzah"],
+    "prerequisite_symbols": ["fatha", "tanween_damma", "hamzah"],
     "suitable_types": ["free_reading"],
     "skill_buckets": ["connected_decoding", "hamzah_reading"],
     "letter_breakdown": [
-      { "letter_id": 1, "position": "initial", "diacritical": "fatha", "tajweed_rules": ["hamzah_above"] },
+      { "letter_id": 1, "position": "isolated", "diacritical": "fatha", "tajweed_rules": ["hamzah_above"] },
       { "letter_id": 6, "position": "medial", "diacritical": "fatha", "tajweed_rules": [] },
-      { "letter_id": 8, "position": "final", "diacritical": "tanwin_damm", "tajweed_rules": [] }
+      { "letter_id": 8, "position": "final", "diacritical": "tanween_damma", "tajweed_rules": [] }
     ]
   }
 ]

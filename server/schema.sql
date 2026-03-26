@@ -28,3 +28,13 @@ CREATE INDEX IF NOT EXISTS idx_words_phase ON words(min_phase);
 CREATE INDEX IF NOT EXISTS idx_words_difficulty ON words(difficulty_tier);
 CREATE INDEX IF NOT EXISTS idx_words_frequency ON words(quran_frequency DESC);
 CREATE INDEX IF NOT EXISTS idx_words_plain ON words(arabic_plain);
+
+-- letter_breakdown JSON structure (per element):
+-- {
+--   "letter_id": 2,
+--   "position": "isolated" | "initial" | "medial" | "final",
+--   "diacritical": "fatha" | "kasra" | "damma" | "sukoon" | "shaddah" |
+--                  "shaddah_fatha" | "shaddah_kasra" | "shaddah_damma" |
+--                  "tanween_fatha" | "tanween_kasra" | "tanween_damma" | null,
+--   "tajweed_rules": ["rule_name", ...]
+-- }
