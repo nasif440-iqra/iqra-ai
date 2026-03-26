@@ -1,6 +1,7 @@
 import { getLetter } from "../../data/letters.js";
 import { getConnectedForms, doesLetterJoin, getBreakerIds } from "../../data/connectedForms.js";
 import { shuffle, pickRandom } from "./shared.js";
+import { getAnyContextWord } from "../../data/phase4Words.js";
 
 const POSITIONS = ["isolated", "initial", "medial", "final"];
 
@@ -23,6 +24,7 @@ function buildGuidedReveal(letterId) {
     letterId,
     revealUpTo: "final",
     explanation,
+    contextWord: getAnyContextWord(letterId) || undefined,
   };
 }
 

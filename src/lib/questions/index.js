@@ -22,6 +22,7 @@ export function generateLessonQuestions(lesson, progress) {
   else if (lesson.lessonMode === "contrast") qs = generateContrastQs(lesson);
   else if (lesson.lessonMode === "harakat-intro") qs = generateHarakatIntroQs(lesson);
   else if (lesson.lessonMode === "harakat" || lesson.lessonMode === "harakat-mixed") qs = generateHarakatQs(lesson);
+  else if (lesson.lessonMode === "connected-forms") return generateConnectedFormExercises(lesson);
   else qs = lesson.lessonMode === "sound" ? generateSoundQs(lesson) : generateRecognitionQs(lesson);
 
   // Safeguard: validate every question, replace failures with fallbacks

@@ -68,7 +68,8 @@ describe("getPhaseCounts", () => {
     expect(counts.p1Total).toBe(LESSONS.filter(l => l.phase === 1).length);
     expect(counts.p2Total).toBe(LESSONS.filter(l => l.phase === 2).length);
     expect(counts.p3Total).toBe(LESSONS.filter(l => l.phase === 3).length);
-    expect(counts.p1Total + counts.p2Total + counts.p3Total).toBe(TOTAL_LESSONS);
+    const p4Total = LESSONS.filter(l => l.phase === 4).length;
+    expect(counts.p1Total + counts.p2Total + counts.p3Total + p4Total).toBe(TOTAL_LESSONS);
   });
 });
 
