@@ -1,4 +1,4 @@
-import { LESSONS, PHASE_1_COMPLETION_THRESHOLD, PHASE_2_COMPLETION_THRESHOLD } from "../data/lessons.js";
+import { LESSONS, PHASE_1_COMPLETION_THRESHOLD, PHASE_2_COMPLETION_THRESHOLD, PHASE_3_COMPLETION_THRESHOLD } from "../data/lessons.js";
 import { deriveMasteryState } from "./mastery.js";
 
 const STORAGE_KEY = "tila_progress";
@@ -347,10 +347,11 @@ const PHASE_META = {
   1: { title: "Letter Recognition", lessons: LESSONS.filter(l => l.phase === 1) },
   2: { title: "Letter Sounds", lessons: LESSONS.filter(l => l.phase === 2) },
   3: { title: "Harakat (Vowels)", lessons: LESSONS.filter(l => l.phase === 3) },
+  4: { title: "Connected Forms", lessons: LESSONS.filter(l => l.phase === 4) },
 };
 
 export function getAllPhases() {
-  return [1, 2, 3].map(p => ({ phase: p, ...PHASE_META[p] }));
+  return [1, 2, 3, 4].map(p => ({ phase: p, ...PHASE_META[p] }));
 }
 
 export function getPhaseByLessonId(lessonId) {
@@ -366,12 +367,14 @@ export function getPhaseProgress(completedLessonIds, phaseNum) {
 }
 
 export function getCompletedPhaseIntercept(prevCompletedIds, newCompletedIds) {
-  for (const p of [1, 2, 3]) {
+  for (const p of [1, 2, 3, 4]) {
     const meta = PHASE_META[p];
+    if (!meta || meta.lessons.length === 0) continue;
     const wasDone = meta.lessons.every(l => prevCompletedIds.includes(l.id));
     const nowDone = meta.lessons.every(l => newCompletedIds.includes(l.id));
     if (!wasDone && nowDone) {
-      const nextPhase = p < 3 ? { phase: p + 1, title: PHASE_META[p + 1].title } : null;
+      const nextMeta = PHASE_META[p + 1];
+      const nextPhase = nextMeta ? { phase: p + 1, title: nextMeta.title } : null;
       return { phase: p, title: meta.title, nextPhase };
     }
   }
@@ -381,15 +384,17 @@ export function getCompletedPhaseIntercept(prevCompletedIds, newCompletedIds) {
 /* ── Zeigarnik momentum copy ── */
 
 export function getPhaseMomentumCopy(completedLessonIds) {
-  for (const p of [1, 2, 3]) {
+  for (const p of [1, 2, 3, 4]) {
     const meta = PHASE_META[p];
+    if (!meta || meta.lessons.length === 0) continue;
     const done = meta.lessons.filter(l => completedLessonIds.includes(l.id)).length;
     const total = meta.lessons.length;
 
     if (done >= total) continue;
 
     const remaining = total - done;
-    const nextPhase = p < 3 ? PHASE_META[p + 1].title : null;
+    const nextMeta = PHASE_META[p + 1];
+    const nextPhase = nextMeta ? nextMeta.title : null;
     const phaseName = meta.title;
 
     if (done === 0) return null;
@@ -487,6 +492,12 @@ export function isLessonUnlocked(lessonIndex, completedLessonIds, entities, toda
     return isPhaseCompetent(2, completedLessonIds, entities, today);
   }
 
+  if (cur.phase === 4 && prev.phase === 3) {
+    const p3Done = LESSONS.filter(l => l.phase === 3 && completedLessonIds.includes(l.id)).length;
+    if (p3Done < PHASE_3_COMPLETION_THRESHOLD) return false;
+    return isPhaseCompetent(3, completedLessonIds, entities, today);
+  }
+
   return completedLessonIds.includes(prev.id);
 }
 
@@ -500,6 +511,12 @@ export function isPhase3Unlocked(completedLessonIds, entities, today) {
   const p2Done = LESSONS.filter(l => l.phase === 2 && completedLessonIds.includes(l.id)).length;
   if (p2Done < PHASE_2_COMPLETION_THRESHOLD) return false;
   return isPhaseCompetent(2, completedLessonIds, entities, today);
+}
+
+export function isPhase4Unlocked(completedLessonIds, entities, today) {
+  const p3Done = LESSONS.filter(l => l.phase === 3 && completedLessonIds.includes(l.id)).length;
+  if (p3Done < PHASE_3_COMPLETION_THRESHOLD) return false;
+  return isPhaseCompetent(3, completedLessonIds, entities, today);
 }
 
 export { PHASE_MASTERY_FRACTION };

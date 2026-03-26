@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { LESSONS } from "../data/lessons.js";
 import { getCurrentLesson, getCurrentUnlockedLesson, getLearnedLetterIds, getPhaseCounts, getDailyGoal, getDueLetters, getLessonsCompletedCount, getLastCompletedLesson, planReviewSession } from "../lib/selectors.js";
+import { isPhase4Unlocked } from "../lib/progress.js";
 
 const ALL_IDS = LESSONS.map(l => l.id);
 const LAST_LESSON_ID = LESSONS[LESSONS.length - 1].id;
@@ -306,5 +307,17 @@ describe("planReviewSession — unstable items and urgency", () => {
     const plan = planReviewSession(mastery, "2026-03-26");
     const count = plan.items.filter(k => k === "letter:7").length;
     expect(count).toBe(1);
+  });
+});
+
+describe("Phase 4 unlock", () => {
+  it("Phase 4 is locked when fewer than 12 Phase 3 lessons completed", () => {
+    const ids = LESSONS.filter(l => l.phase === 3).slice(0, 11).map(l => l.id);
+    expect(isPhase4Unlocked(ids, {}, "2026-04-01")).toBe(false);
+  });
+
+  it("Phase 4 unlocks when 12+ Phase 3 lessons completed with no mastery data", () => {
+    const ids = LESSONS.filter(l => l.phase === 3).slice(0, 12).map(l => l.id);
+    expect(isPhase4Unlocked(ids, null, "2026-04-01")).toBe(true);
   });
 });

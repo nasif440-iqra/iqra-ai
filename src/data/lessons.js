@@ -315,3 +315,4 @@ export const LESSONS = [
 
 export const PHASE_1_COMPLETION_THRESHOLD = 15;
 export const PHASE_2_COMPLETION_THRESHOLD = 12;
+export const PHASE_3_COMPLETION_THRESHOLD = 12;
