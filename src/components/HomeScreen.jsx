@@ -58,7 +58,7 @@ export default function HomeScreen({ progress, mastery, completedLessonIds, less
     : `${learnedIds.length} letters and growing`;
 
   /* ── find the current (next uncompleted + unlocked) lesson ── */
-  const currentLesson = getCurrentUnlockedLesson(completedLessonIds);
+  const currentLesson = getCurrentUnlockedLesson(completedLessonIds, mastery?.entities, today);
   const allDone = !currentLesson || completedLessonIds.length >= LESSONS.length;
   const currentIdx = currentLesson ? LESSONS.findIndex(l => l.id === currentLesson.id) : LESSONS.length - 1;
   const heroLetters = currentLesson ? (currentLesson.teachIds || []).map(id => getLetter(id)).filter(Boolean) : [];
@@ -272,7 +272,7 @@ export default function HomeScreen({ progress, mastery, completedLessonIds, less
               const complete = isComplete(lesson);
               const isCurrent = lesson.id === currentLesson.id;
               const globalIdx = windowStart + i;
-              const unlocked = isLessonUnlocked(globalIdx, completedLessonIds);
+              const unlocked = isLessonUnlocked(globalIdx, completedLessonIds, mastery?.entities, today);
               const locked = !complete && !isCurrent && !unlocked;
               const letters = (lesson.teachIds || []).map(id => getLetter(id));
               const firstLetter = letters[0];

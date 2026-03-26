@@ -19,11 +19,11 @@ export function getCurrentLesson(completedLessonIds) {
 }
 
 /** Returns the first lesson that is not completed AND actually unlocked. */
-export function getCurrentUnlockedLesson(completedLessonIds) {
+export function getCurrentUnlockedLesson(completedLessonIds, entities, today) {
   for (let i = 0; i < LESSONS.length; i++) {
     const l = LESSONS[i];
     if (completedLessonIds.includes(l.id)) continue;
-    if (isLessonUnlocked(i, completedLessonIds)) return l;
+    if (isLessonUnlocked(i, completedLessonIds, entities, today)) return l;
   }
   // All done or nothing unlocked — fall back to last lesson
   return LESSONS[LESSONS.length - 1];

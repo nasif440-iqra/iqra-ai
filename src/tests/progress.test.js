@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { getTodayDateString, getDayDifference, recalculateWirdOnAppOpen, recordPractice, loadProgress, saveProgress, resetProgress, sanitizeCompletedIds, PROGRESS_SCHEMA_VERSION } from "../lib/progress.js";
+import { getTodayDateString, getDayDifference, recalculateWirdOnAppOpen, recordPractice, loadProgress, saveProgress, resetProgress, sanitizeCompletedIds, PROGRESS_SCHEMA_VERSION, isLessonUnlocked, isPhaseCompetent, isPhase2Unlocked, isPhase3Unlocked, PHASE_MASTERY_FRACTION } from "../lib/progress.js";
 import { getLessonsCompletedCount, getLastCompletedLesson } from "../lib/selectors.js";
 
 describe("getTodayDateString", () => {
@@ -453,5 +453,172 @@ describe("derived progress values", () => {
   it("getLastCompletedLesson returns highest ID lesson regardless of order", () => {
     const last = getLastCompletedLesson([44, 2, 10]);
     expect(last.id).toBe(44);
+  });
+});
+
+// ── Competence-based phase unlocking ──
+
+import { LESSONS, PHASE_1_COMPLETION_THRESHOLD, PHASE_2_COMPLETION_THRESHOLD } from "../data/lessons.js";
+
+describe("competence-based phase unlocking", () => {
+  const today = "2026-03-26";
+  const p1Lessons = LESSONS.filter(l => l.phase === 1);
+  const p2Lessons = LESSONS.filter(l => l.phase === 2);
+
+  // Helper: build completed IDs for first N lessons of a phase
+  function firstNIds(phaseLessons, n) {
+    return phaseLessons.slice(0, n).map(l => l.id);
+  }
+
+  // Helper: build entities where specified letters are "accurate"
+  function makeAccurateEntities(letterIds) {
+    const entities = {};
+    for (const id of letterIds) {
+      entities[`letter:${id}`] = { correct: 8, attempts: 10, sessionStreak: 2, intervalDays: 3, lastSeen: "2026-03-25" };
+    }
+    return entities;
+  }
+
+  // Helper: build entities where specified letters are "unstable"
+  function makeUnstableEntities(letterIds) {
+    const entities = {};
+    for (const id of letterIds) {
+      entities[`letter:${id}`] = { correct: 1, attempts: 5, sessionStreak: 0, intervalDays: 1, lastSeen: "2026-03-25" };
+    }
+    return entities;
+  }
+
+  // Get the unique taught letters from first N lessons of a phase
+  function getTaughtLetters(phaseLessons, n) {
+    const ids = new Set();
+    phaseLessons.slice(0, n).forEach(l => (l.teachIds || []).forEach(id => ids.add(id)));
+    return [...ids];
+  }
+
+  describe("isPhaseCompetent", () => {
+    it("returns true when no entities provided (backward compat)", () => {
+      const ids = firstNIds(p1Lessons, 15);
+      expect(isPhaseCompetent(1, ids, null, today)).toBe(true);
+      expect(isPhaseCompetent(1, ids, undefined, today)).toBe(true);
+    });
+
+    it("returns true when all phase lessons completed (safety valve)", () => {
+      const allP1Ids = p1Lessons.map(l => l.id);
+      // Even with terrible mastery, completing everything bypasses the check
+      const badEntities = makeUnstableEntities([1, 2, 3]);
+      expect(isPhaseCompetent(1, allP1Ids, badEntities, today)).toBe(true);
+    });
+
+    it("returns true when enough taught letters are accurate", () => {
+      const ids = firstNIds(p1Lessons, 15);
+      const taught = getTaughtLetters(p1Lessons, 15);
+      // Make all taught letters accurate
+      const entities = makeAccurateEntities(taught);
+      expect(isPhaseCompetent(1, ids, entities, today)).toBe(true);
+    });
+
+    it("returns false when taught letters are mostly unstable", () => {
+      const ids = firstNIds(p1Lessons, 15);
+      const taught = getTaughtLetters(p1Lessons, 15);
+      // Make all taught letters unstable
+      const entities = makeUnstableEntities(taught);
+      expect(isPhaseCompetent(1, ids, entities, today)).toBe(false);
+    });
+
+    it("returns false when most taught letters have no mastery data", () => {
+      const ids = firstNIds(p1Lessons, 15);
+      // No entities at all → all "introduced" → below 70%
+      expect(isPhaseCompetent(1, ids, {}, today)).toBe(false);
+    });
+
+    it("counts retained as competent", () => {
+      const ids = firstNIds(p1Lessons, 15);
+      const taught = getTaughtLetters(p1Lessons, 15);
+      const entities = {};
+      for (const id of taught) {
+        entities[`letter:${id}`] = {
+          correct: 12, attempts: 14, sessionStreak: 4, intervalDays: 14,
+          nextReview: "2026-04-09", lastSeen: "2026-03-25",
+        };
+      }
+      expect(isPhaseCompetent(1, ids, entities, today)).toBe(true);
+    });
+
+    it("threshold is exactly 70%", () => {
+      expect(PHASE_MASTERY_FRACTION).toBe(0.7);
+    });
+
+    it("passes at exactly the fraction boundary", () => {
+      const ids = firstNIds(p1Lessons, 15);
+      const taught = getTaughtLetters(p1Lessons, 15);
+      // Need ceil(taught.length * 0.7) accurate
+      const needed = Math.ceil(taught.length * PHASE_MASTERY_FRACTION);
+      const entities = {};
+      for (let i = 0; i < taught.length; i++) {
+        if (i < needed) {
+          entities[`letter:${taught[i]}`] = { correct: 8, attempts: 10, sessionStreak: 2, intervalDays: 3, lastSeen: "2026-03-25" };
+        } else {
+          entities[`letter:${taught[i]}`] = { correct: 1, attempts: 5, sessionStreak: 0, intervalDays: 1, lastSeen: "2026-03-25" };
+        }
+      }
+      expect(isPhaseCompetent(1, ids, entities, today)).toBe(true);
+    });
+  });
+
+  describe("isLessonUnlocked with mastery", () => {
+    it("Phase 2 lesson blocked without mastery despite enough completed lessons", () => {
+      const ids = firstNIds(p1Lessons, 15);
+      // Find the first Phase 2 lesson index
+      const p2FirstIdx = LESSONS.findIndex(l => l.phase === 2);
+      // Unstable mastery → should block
+      const taught = getTaughtLetters(p1Lessons, 15);
+      const entities = makeUnstableEntities(taught);
+      expect(isLessonUnlocked(p2FirstIdx, ids, entities, today)).toBe(false);
+    });
+
+    it("Phase 2 lesson unlocked with enough completed lessons AND mastery", () => {
+      const ids = firstNIds(p1Lessons, 15);
+      const p2FirstIdx = LESSONS.findIndex(l => l.phase === 2);
+      const taught = getTaughtLetters(p1Lessons, 15);
+      const entities = makeAccurateEntities(taught);
+      expect(isLessonUnlocked(p2FirstIdx, ids, entities, today)).toBe(true);
+    });
+
+    it("Phase 2 still blocked if not enough completed lessons even with good mastery", () => {
+      const ids = firstNIds(p1Lessons, 5); // only 5, need 15
+      const p2FirstIdx = LESSONS.findIndex(l => l.phase === 2);
+      const entities = makeAccurateEntities([1, 2, 3, 4, 5]);
+      expect(isLessonUnlocked(p2FirstIdx, ids, entities, today)).toBe(false);
+    });
+
+    it("within-phase lessons still use previous-lesson completion", () => {
+      // Lesson 2 requires lesson 1 completed — no mastery check
+      expect(isLessonUnlocked(1, [1], {}, today)).toBe(true);
+      expect(isLessonUnlocked(1, [], {}, today)).toBe(false);
+    });
+
+    it("backward compatible: no entities passed → old behavior", () => {
+      const ids = firstNIds(p1Lessons, 15);
+      const p2FirstIdx = LESSONS.findIndex(l => l.phase === 2);
+      // No entities → falls back to lesson-count only
+      expect(isLessonUnlocked(p2FirstIdx, ids)).toBe(true);
+    });
+  });
+
+  describe("isPhase2Unlocked / isPhase3Unlocked with mastery", () => {
+    it("isPhase2Unlocked requires mastery when entities provided", () => {
+      const ids = firstNIds(p1Lessons, 15);
+      const taught = getTaughtLetters(p1Lessons, 15);
+      expect(isPhase2Unlocked(ids, makeUnstableEntities(taught), today)).toBe(false);
+      expect(isPhase2Unlocked(ids, makeAccurateEntities(taught), today)).toBe(true);
+    });
+
+    it("isPhase3Unlocked requires mastery when entities provided", () => {
+      // Need 12 P2 lessons + mastery of P2 taught letters
+      const p2Ids = firstNIds(p2Lessons, 12);
+      const taught = getTaughtLetters(p2Lessons, 12);
+      expect(isPhase3Unlocked(p2Ids, makeUnstableEntities(taught), today)).toBe(false);
+      expect(isPhase3Unlocked(p2Ids, makeAccurateEntities(taught), today)).toBe(true);
+    });
   });
 });
