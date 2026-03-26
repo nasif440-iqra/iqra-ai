@@ -207,8 +207,10 @@ export function queryWords(db, filters = {}) {
   if (containsLetterIds && containsLetterIds.length > 0) {
     containsLetterIds.forEach((letterId, index) => {
       const paramName = `letterId${index}`;
-      conditions.push(`prerequisite_letter_ids LIKE @${paramName}`);
-      params[paramName] = `%${letterId}%`;
+      conditions.push(
+        `EXISTS (SELECT 1 FROM json_each(prerequisite_letter_ids) WHERE value = @${paramName})`
+      );
+      params[paramName] = letterId;
     });
   }
 

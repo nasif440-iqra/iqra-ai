@@ -248,6 +248,29 @@ describe("queryWords", () => {
     expect(translits).toContain("min");
   });
 
+  it("does not return false positives for containsLetterIds — id 4 must not match id 24", () => {
+    // Insert a word with prerequisite_letter_ids [4] only
+    const db2 = new Database(":memory:");
+    const schema = fs.readFileSync(SCHEMA_PATH, "utf8");
+    db2.exec(schema);
+
+    insertWord(db2, {
+      ...WORD_MIN,
+      arabic_text: "تَ",
+      arabic_plain: "ت",
+      transliteration: "ta",
+      english_meaning: "ta",
+      prerequisite_letter_ids: [4],
+      letter_breakdown: [{ letter_id: 4, form: "isolated" }],
+    });
+
+    // Querying for letter id 24 must NOT return the word that only has id 4
+    const words = queryWords(db2, { containsLetterIds: [24] });
+    const translits = words.map((w) => w.transliteration);
+    expect(translits).not.toContain("ta");
+    expect(words.length).toBe(0);
+  });
+
   it("limits results", () => {
     const words = queryWords(db, { limit: 2 });
     expect(words.length).toBe(2);
