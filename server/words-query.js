@@ -37,7 +37,8 @@ export function parseWordRow(row) {
       try {
         parsed[field] = JSON.parse(parsed[field]);
       } catch {
-        // Leave as-is if parsing fails (should not happen with well-formed data)
+        console.warn(`[words-query] Malformed JSON in field "${field}" for row id=${parsed.id}: ${parsed[field]}`);
+        parsed[field] = [];
       }
     }
   }
