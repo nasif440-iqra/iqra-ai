@@ -68,7 +68,6 @@ export default function FreeReader({ exercise, onComplete }) {
           fontSize: 56,
           lineHeight: 1.5,
           color: "var(--c-primary-dark)",
-          direction: "rtl",
           textAlign: "center",
           marginBottom: exercise.contextWord ? 12 : 24,
           userSelect: "none",

@@ -70,7 +70,6 @@ export default function SpotTheBreak({ exercise, onComplete }) {
           fontSize: 48,
           fontFamily: "var(--font-arabic)",
           color: "var(--c-text)",
-          direction: "rtl",
           lineHeight: 1.3,
         }}
         dir="rtl"
@@ -91,10 +90,10 @@ export default function SpotTheBreak({ exercise, onComplete }) {
 
       {/* Segment buttons in RTL direction */}
       <div
+        dir="rtl"
         style={{
           display: "flex",
           flexDirection: "row",
-          direction: "rtl",
           gap: 10,
           justifyContent: "center",
           flexWrap: "wrap",
@@ -138,7 +137,6 @@ export default function SpotTheBreak({ exercise, onComplete }) {
                 fontSize: 28,
                 color: "var(--c-text)",
                 cursor: isAnswered ? "default" : "pointer",
-                direction: "rtl",
                 transition: "background 0.2s, border-color 0.2s",
                 lineHeight: 1.4,
               }}

@@ -148,12 +148,12 @@ export default function BuildUpReader({ exercise, onComplete }) {
             {visibleSegments.slice(0, -1).map((seg, idx) => (
               <span
                 key={idx}
+                dir="rtl"
                 style={{
                   fontFamily: "var(--font-arabic)",
                   fontSize: 28,
                   lineHeight: 1.6,
                   color: "var(--c-text)",
-                  direction: "rtl",
                 }}
               >
                 {seg.arabic}
@@ -173,12 +173,12 @@ export default function BuildUpReader({ exercise, onComplete }) {
             style={{ textAlign: "center" }}
           >
             <span
+              dir="rtl"
               style={{
                 fontFamily: "var(--font-arabic)",
                 fontSize: isFullWord ? 72 : 64,
                 lineHeight: 1.6,
                 color: "var(--c-primary-dark)",
-                direction: "rtl",
                 display: "block",
                 transition: "font-size 0.2s",
               }}
@@ -290,12 +290,12 @@ export default function BuildUpReader({ exercise, onComplete }) {
               }}
             >
               <span
+                dir="rtl"
                 style={{
                   fontFamily: "var(--font-arabic)",
                   fontSize: 32,
                   lineHeight: 1.6,
                   color: "var(--c-primary-dark)",
-                  direction: "rtl",
                   display: "block",
                 }}
               >

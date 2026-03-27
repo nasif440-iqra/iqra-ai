@@ -56,10 +56,10 @@ export default function TapInOrder({ exercise, onComplete }) {
 
       {/* Letter boxes row — direction rtl so index 0 is on the right */}
       <div
+        dir="rtl"
         style={{
           display: "flex",
           flexDirection: "row",
-          direction: "rtl",
           gap: 12,
           justifyContent: "center",
           flexWrap: "wrap",
@@ -116,10 +116,10 @@ export default function TapInOrder({ exercise, onComplete }) {
 
       {/* Progress indicators */}
       <div
+        dir="rtl"
         style={{
           display: "flex",
           flexDirection: "row",
-          direction: "rtl",
           gap: 8,
           justifyContent: "center",
           flexWrap: "wrap",
