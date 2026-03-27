@@ -104,6 +104,7 @@ function buildComprehension(buildupExercise, allBuildup) {
  * @returns {Array}
  */
 export function generateConnectedReadingExercises(lesson) {
+  if (!lesson) return [];
   const teachIds = lesson.teachIds || [];
   if (teachIds.length < 2) return [];
 

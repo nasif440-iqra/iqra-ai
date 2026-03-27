@@ -348,6 +348,7 @@ function generateMasteryCheckExercises() {
  * @returns {Array}
  */
 export function generateConnectedFormExercises(lesson) {
+  if (!lesson) return [];
   if (lesson.module === "4.0") {
     return generateRTLExercises();
   }

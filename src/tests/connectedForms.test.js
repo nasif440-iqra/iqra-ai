@@ -275,6 +275,18 @@ describe("generateConnectedFormExercises", () => {
   });
 });
 
+describe("generator null-safety", () => {
+  it("generateConnectedFormExercises returns [] for null lesson", () => {
+    expect(generateConnectedFormExercises(null)).toEqual([]);
+    expect(generateConnectedFormExercises(undefined)).toEqual([]);
+  });
+
+  it("generateConnectedReadingExercises returns [] for null lesson", () => {
+    expect(generateConnectedReadingExercises(null)).toEqual([]);
+    expect(generateConnectedReadingExercises(undefined)).toEqual([]);
+  });
+});
+
 // ── generateConnectedReadingExercises ──
 
 describe("generateConnectedReadingExercises", () => {
