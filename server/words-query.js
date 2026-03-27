@@ -193,14 +193,17 @@ export function queryWords(db, filters = {}) {
   }
 
   if (skillBucket !== undefined) {
-    // Use LIKE to search within the JSON array stored as text
-    conditions.push(`skill_buckets LIKE @skillBucket`);
-    params.skillBucket = `%"${skillBucket}"%`;
+    conditions.push(
+      `EXISTS (SELECT 1 FROM json_each(skill_buckets) WHERE value = @skillBucket)`
+    );
+    params.skillBucket = skillBucket;
   }
 
   if (suitableType !== undefined) {
-    conditions.push(`suitable_types LIKE @suitableType`);
-    params.suitableType = `%"${suitableType}"%`;
+    conditions.push(
+      `EXISTS (SELECT 1 FROM json_each(suitable_types) WHERE value = @suitableType)`
+    );
+    params.suitableType = suitableType;
   }
 
   // Each letter id must appear in prerequisite_letter_ids JSON array

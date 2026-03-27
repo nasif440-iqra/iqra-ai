@@ -319,6 +319,28 @@ describe("queryWords", () => {
   });
 });
 
+// ── queryWords json_each filters ────────────────────────────────────────────
+
+describe("queryWords json_each filters", () => {
+  it("skillBucket filter does not false-match substrings", () => {
+    // "connected" should not match "connected_decoding"
+    const results = queryWords(db, { skillBucket: "connected" });
+    const buckets = results.flatMap(r => r.skill_buckets);
+    for (const bucket of buckets) {
+      expect(bucket).toBe("connected");
+    }
+    // WORD_BISMI has ["connected_decoding", "symbol_reading"] — should NOT match "connected"
+    const hasSubstringMatch = results.some(r => r.arabic_text === WORD_BISMI.arabic_text);
+    expect(hasSubstringMatch).toBe(false);
+  });
+
+  it("suitableType filter does not false-match substrings", () => {
+    const results = queryWords(db, { suitableType: "free" });
+    const hasFalse = results.some(r => r.suitable_types.includes("free_reading"));
+    expect(hasFalse).toBe(false);
+  });
+});
+
 // ── Schema CHECK constraints ───────────────────────────────────────────────
 
 describe("schema CHECK constraints", () => {
