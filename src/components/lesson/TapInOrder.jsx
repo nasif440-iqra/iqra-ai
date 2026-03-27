@@ -93,7 +93,7 @@ export default function TapInOrder({ exercise, onComplete }) {
                   ? "var(--c-primary)"
                   : "var(--c-bg-card)",
                 color: isTapped
-                  ? "#fff"
+                  ? "var(--c-bg-card)"
                   : shakeIndex === index
                   ? "var(--c-danger)"
                   : "var(--c-text)",
@@ -104,7 +104,7 @@ export default function TapInOrder({ exercise, onComplete }) {
                 alignItems: "center",
                 justifyContent: "center",
                 boxShadow: isNext && !done
-                  ? "0 0 0 3px rgba(196,164,100,0.3)"
+                  ? "0 0 0 3px var(--c-accent-glow)"
                   : "none",
                 transition: "background 0.2s, color 0.2s, border-color 0.2s",
               }}

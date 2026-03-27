@@ -141,7 +141,7 @@ export default function GuidedReveal({ exercise, onComplete }) {
                   ? "var(--c-bg-card)"
                   : "transparent",
                 boxShadow: isCurrent
-                  ? "0 4px 12px rgba(22,51,35,0.18)"
+                  ? "var(--shadow-soft)"
                   : isRevealed
                   ? "var(--shadow-soft, 0 2px 8px rgba(0,0,0,0.06))"
                   : "none",
@@ -159,7 +159,7 @@ export default function GuidedReveal({ exercise, onComplete }) {
                       fontFamily: "var(--font-arabic)",
                       fontSize: 38,
                       lineHeight: 1.3,
-                      color: isCurrent ? "#fff" : "var(--c-primary-dark)",
+                      color: isCurrent ? "var(--c-bg-card)" : "var(--c-primary-dark)",
                     }}
                     dir="rtl"
                   >

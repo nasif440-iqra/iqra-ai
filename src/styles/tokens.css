@@ -10,12 +10,14 @@
   --c-accent-light: #F5EDDB;
   --c-danger: #BD524D;
   --c-danger-light: #FCE6E5;
+  --c-danger-dark: #7A2E2B;
   --c-text: #163323;
   --c-text-soft: #52545C;
   --c-text-muted: #6B6760;
   --c-border: #EBE6DC;
   --c-success: #163323;
   --c-gold: #C4A464;
+  --c-accent-glow: rgba(196, 164, 100, 0.3);
   --font-body: 'Inter', sans-serif;
   --font-heading: 'Lora', serif;
   --font-arabic: 'Traditional Arabic', 'Amiri', serif;

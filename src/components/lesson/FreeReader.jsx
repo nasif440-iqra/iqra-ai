@@ -146,7 +146,7 @@ export default function FreeReader({ exercise, onComplete }) {
             alignItems: "center",
             gap: 10,
             background: "var(--c-primary)",
-            color: "#fff",
+            color: "var(--c-bg-card)",
             border: "none",
             borderRadius: "var(--radius-btn)",
             padding: "14px 28px",
@@ -203,7 +203,7 @@ export default function FreeReader({ exercise, onComplete }) {
             disabled={isLoading}
             aria-label="Hear it again"
             style={{
-              background: "#fff",
+              background: "var(--c-bg-card)",
               color: "var(--c-text-soft)",
               border: "1.5px solid var(--c-border)",
               borderRadius: "var(--radius-btn)",
@@ -249,7 +249,7 @@ export default function FreeReader({ exercise, onComplete }) {
             disabled={isLoading}
             aria-label="Hear again"
             style={{
-              background: "#fff",
+              background: "var(--c-bg-card)",
               color: "var(--c-text-soft)",
               border: "1.5px solid var(--c-border)",
               borderRadius: "var(--radius-btn)",

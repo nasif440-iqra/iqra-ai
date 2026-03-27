@@ -191,7 +191,7 @@ export default function SpotTheBreak({ exercise, onComplete }) {
                 borderRadius: "var(--radius-btn)",
                 border: "none",
                 background: "var(--c-danger)",
-                color: "#fff",
+                color: "var(--c-bg-card)",
                 fontWeight: 600,
                 fontSize: 14,
                 cursor: "pointer",

@@ -160,7 +160,7 @@ function ComprehensionExercise({ exercise, onComplete }) {
               whileHover={!answered ? { scale: 1.02, borderColor: "var(--c-primary)", transition: { type: "spring", stiffness: 400, damping: 30 } } : undefined}
               whileTap={!answered ? { scale: 0.94 } : undefined}
               {...(isSelectedCorrect ? {
-                animate: { backgroundColor: ["#FFFFFF", "#E8F0EB", "#E8F0EB"], scale: [1, 1.04, 1] },
+                animate: { backgroundColor: ["var(--c-bg-card)", "var(--c-primary-soft)", "var(--c-primary-soft)"], scale: [1, 1.04, 1] },
                 transition: { duration: 0.4, times: [0, 0.3, 1] },
               } : isSelectedWrong ? {
                 animate: { x: [-6, 6, -5, 5, -3, 3, 0] },
@@ -189,7 +189,7 @@ function ComprehensionExercise({ exercise, onComplete }) {
                     transition={{ duration: 0.65, ease: [0.2, 0.8, 0.4, 1] }}
                     style={{
                       position: "absolute", top: -8, left: "50%", marginLeft: -10,
-                      color: "gold", fontWeight: 700, fontSize: 18, pointerEvents: "none",
+                      color: "var(--c-accent)", fontWeight: 700, fontSize: 18, pointerEvents: "none",
                     }}
                   >
                     +1
@@ -220,7 +220,7 @@ function ComprehensionExercise({ exercise, onComplete }) {
           >
             <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
               <Icons.X size={18} color="var(--c-danger)" style={{ marginTop: 1, flexShrink: 0 }} />
-              <span style={{ fontSize: 13.5, fontWeight: 600, color: "#7a2e2b", lineHeight: 1.5 }}>
+              <span style={{ fontSize: 13.5, fontWeight: 600, color: "var(--c-danger-dark)", lineHeight: 1.5 }}>
                 {wrongExplanation || "Not quite — the correct answer is highlighted above."}
               </span>
             </div>
@@ -228,8 +228,8 @@ function ComprehensionExercise({ exercise, onComplete }) {
               <div style={{ display: "flex", justifyContent: "center", gap: 20, padding: "8px 0 4px" }}>
                 <div style={{ textAlign: "center", opacity: 0.5 }}>
                   <span style={{ fontFamily: "var(--font-arabic)", fontSize: 32, color: "var(--c-danger)", display: "block", lineHeight: 1.4 }}>{chosenLetter.letter}</span>
-                  <span style={{ fontSize: 10, fontWeight: 700, color: "#7a2e2b" }}>{chosenLetter.name}</span>
-                  {chosenLetter.visualRule && <span style={{ fontSize: 9, color: "#7a2e2b", display: "block", opacity: 0.7 }}>{chosenLetter.visualRule}</span>}
+                  <span style={{ fontSize: 10, fontWeight: 700, color: "var(--c-danger-dark)" }}>{chosenLetter.name}</span>
+                  {chosenLetter.visualRule && <span style={{ fontSize: 9, color: "var(--c-danger-dark)", display: "block", opacity: 0.7 }}>{chosenLetter.visualRule}</span>}
                 </div>
                 <div style={{ display: "flex", alignItems: "center", fontSize: 14, color: "var(--c-text-muted)" }}>{"→"}</div>
                 <div style={{ textAlign: "center" }}>
